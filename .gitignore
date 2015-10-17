@@ -1,0 +1,8 @@
+*.cc
+*.h
+*.d
+*.cl
+parser
+README
+*.output
+*.aps
