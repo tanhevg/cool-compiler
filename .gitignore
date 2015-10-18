@@ -4,5 +4,8 @@
 *.cl
 parser
 README
-*.output
+*.out*
+*.o
 *.aps
+*.swp
+*.tree

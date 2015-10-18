@@ -71,11 +71,28 @@ int omerrs = 0;               /* number of errors in lexing and parsing */
 %type <classes> class_list
 %type <class_> class
 
-/* You will want to change the following line. */
-%type <features> dummy_feature_list
+%type <feature> feature
+%type <features> feature_list
+
+%type <formal> formal
+%type <formals> formals_list
+
+%type <expression> expr 
+%type <expressions> exprs_comma exprs_comma_star exprs_semi
+
+%type <case_> case
+%type <cases> cases
 
 /* Precedence declarations go here. */
-
+%right ASSIGN
+%left NOT
+%nonassoc '<' '=' LE
+%left '+' '-' 
+%left '*' '/' 
+%left ISVOID
+%left '~'
+%left '@'
+%left '.'
 
 %%
 /* 
@@ -94,17 +111,123 @@ class_list
 	;
 
 /* If no parent is specified, the class inherits from the Object class. */
-class	: CLASS TYPEID '{' dummy_feature_list '}' ';'
+class	: CLASS TYPEID '{' feature_list '}' ';'
 		{ $$ = class_($2,idtable.add_string("Object"),$4,
 			      stringtable.add_string(curr_filename)); }
-	| CLASS TYPEID INHERITS TYPEID '{' dummy_feature_list '}' ';'
+	| CLASS TYPEID INHERITS TYPEID '{' feature_list '}' ';'
 		{ $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
 	;
 
-/* Feature list may be empty, but no empty features in list. */
-dummy_feature_list:		/* empty */
-                {  $$ = nil_Features(); }
+feature_list	: /* empty */
+			{ $$ = nil_Features(); }
+		| feature ';'
+			{ $$ = single_Features($1); }
+		| feature_list feature ';'
+			{ $$ = append_Features($1, single_Features($2)); }
+		;
+feature	: OBJECTID '(' formals_list ')' ':' TYPEID '{' expr '}' 
+		{ $$ = method($1, $3, $6, $8); }
+	| OBJECTID ':' TYPEID ASSIGN expr
+		{ $$ = attr($1, $3, $5); }
+	| OBJECTID ':' TYPEID 
+		{ $$ = attr($1, $3, no_expr()); }
+	;
 
+formal	: OBJECTID ':' TYPEID 
+       		{ $$ = formal($1, $3); }
+	;
+
+formals_list	: formal 
+	     		{ $$ = single_Formals($1); }
+	     	| formals_list ',' formal 
+			{ $$ = append_Formals($1, single_Formals($3)); }
+		;
+
+exprs_comma_star	:  /* empty */
+	   			{ $$ = nil_Expressions(); }
+			| ',' expr 
+	    			{ $$ = single_Expressions($2); }
+	        	| exprs_comma_star ',' expr 
+				{ $$ = append_Expressions($1, single_Expressions($3)); }
+			;
+
+exprs_comma	:  /* empty */
+	    		{ $$ = nil_Expressions(); }
+		| expr exprs_comma_star
+			{ $$ = append_Expressions(single_Expressions($1), $2); }
+		;
+
+exprs_semi	:  /* empty */
+	   		{ $$ = nil_Expressions(); }
+		| expr ';'
+			{ $$ = single_Expressions($1); }
+		| exprs_semi expr ';'
+			{ $$ = append_Expressions($1, single_Expressions($2)); }
+		;
+
+case	: OBJECTID ':' TYPEID DARROW expr ';'
+     		{ $$ = branch($1, $3, $5); }
+	;
+
+cases 	: case
+       		{ $$ = single_Cases($1); }
+	| cases case
+		{ $$ = append_Cases($1, single_Cases($2)); }
+	;
+
+expr	: OBJECTID ASSIGN expr
+     		{ $$ = assign($1, $3); }
+	| expr '@' TYPEID '.' OBJECTID '(' exprs_comma ')'
+		{ $$ = static_dispatch($1, $3, $5, $7); }
+	| OBJECTID '(' exprs_comma ')'
+		{ $$ = dispatch(object(idtable.add_string("self")), $1, $3); }
+	| expr '.' OBJECTID '(' exprs_comma ')'
+		{ $$ = dispatch($1, $3, $5); }
+	| IF expr THEN expr ELSE expr FI
+		{ $$ = cond($2, $4, $6); }
+	| WHILE expr LOOP expr POOL
+		{ $$ = loop($2, $4); }
+	| '{' exprs_semi '}'
+		{ $$ = block($2); }
+	| LET OBJECTID ':' TYPEID IN expr
+		{ $$ = let($2, $4, no_expr(), $6); }
+	| LET OBJECTID ':' TYPEID ASSIGN expr IN expr
+		{ $$ = let($2, $4, $6, $8); }
+	| CASE expr OF cases ESAC
+		{ $$ = typcase($2, $4); }
+	| NEW TYPEID
+		{ $$ = new_($2); }
+	| ISVOID expr
+		{ $$ = isvoid($2); }
+	| expr '+' expr
+		{ $$ = plus($1, $3); }
+	| expr '-' expr
+		{ $$ = sub($1, $3); }
+	| expr '*' expr 
+		{ $$ = mul($1, $3); }
+	| expr '/' expr 
+		{ $$ = divide($1, $3); }
+	| '~' expr
+		{ $$ = neg($2); }
+	| expr '<' expr
+		{ $$ = lt($1, $3); }
+	| expr LE expr
+		{ $$ = leq($1, $3); }
+	| expr '=' expr
+		{ $$ = eq($1, $3); }
+	| NOT expr
+		{ $$ = comp($2); }
+	| '(' expr ')'
+		{ $$ = $2; }
+     	| OBJECTID 
+     		{ $$ = object($1); }
+     	| STR_CONST
+		{ $$ = string_const($1); }
+	| INT_CONST
+		{ $$ = int_const($1); }
+	| BOOL_CONST
+		{ $$ = bool_const($1); } 
+	; 
 
 /* end of grammar */
 %%

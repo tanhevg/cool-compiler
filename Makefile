@@ -32,6 +32,9 @@ FLEX=flex ${FFLAGS}
 BISON= bison ${BFLAGS}
 DEPEND = ${CC} -MM ${CPPINCLUDE}
 
+test: parser
+	parser -o 1.out 1.cl > 1.tree
+
 parser: ${OBJS}
 	${CC} ${CFLAGS} ${OBJS} ${LIB} -o parser
 
