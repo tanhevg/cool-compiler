@@ -77,15 +77,12 @@ int omerrs = 0;               /* number of errors in lexing and parsing */
 %type <formal> formal
 %type <formals> formals_list
 
-%type <expression> expr 
+%type <expression> expr opt_assign let_expr
 %type <expressions> exprs_semi exprs_comma 
 
 %type <case_> case
 %type <cases> cases
-/*
-%type <expressions> exprs_comma_star exprs_semi
 
-*/
 /* Precedence declarations go here. */
 %left LET
 %right ASSIGN
@@ -133,10 +130,8 @@ feature_list	: feature ';'
 		;
 feature	: OBJECTID '(' formals_list ')' ':' TYPEID '{' expr '}' 
 		{ $$ = method($1, $3, $6, $8); }
-	| OBJECTID ':' TYPEID ASSIGN expr
-		{ $$ = attr($1, $3, $5); }
-	| OBJECTID ':' TYPEID 
-		{ $$ = attr($1, $3, no_expr()); }
+	| OBJECTID ':' TYPEID opt_assign
+		{ $$ = attr($1, $3, $4); }
 	;
 
 formal	: OBJECTID ':' TYPEID 
@@ -170,6 +165,18 @@ cases 	: case
 		{ $$ = append_Cases($1, single_Cases($2)); }
 	;
 
+opt_assign	: /* empty */
+		    	{ $$ = no_expr(); }
+		| ASSIGN expr
+			{ $$ = $2; }
+		;
+
+let_expr	: OBJECTID ':' TYPEID opt_assign IN expr %prec LET
+	 		{ $$ = let($1, $3, $4, $6); }
+		| OBJECTID ':' TYPEID opt_assign ',' let_expr
+			{ $$ = let($1, $3, $4, $6); }
+		;
+
 expr	: OBJECTID ASSIGN expr
      		{ $$ = assign($1, $3); }
 	| expr '@' TYPEID '.' OBJECTID '(' ')'
@@ -192,10 +199,8 @@ expr	: OBJECTID ASSIGN expr
 		{ $$ = block($2); }
 	| '{' '}'
 		{ $$ = block(nil_Expressions()); }
-	| LET OBJECTID ':' TYPEID IN expr %prec LET
-		{ $$ = let($2, $4, no_expr(), $6); }
-	| LET OBJECTID ':' TYPEID ASSIGN expr IN expr %prec LET
-		{ $$ = let($2, $4, $6, $8); }
+	| LET let_expr 
+		{ $$ = $2; }
 	| CASE expr OF cases ESAC
 		{ $$ = typcase($2, $4); }
 	| NEW TYPEID

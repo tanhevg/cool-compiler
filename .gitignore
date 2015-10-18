@@ -1,7 +1,6 @@
 *.cc
 *.h
 *.d
-*.cl
 parser
 README
 *.out*
@@ -9,3 +8,6 @@ README
 *.aps
 *.swp
 *.tree
+*.log
+good.cl
+bad.cl
