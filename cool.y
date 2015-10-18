@@ -78,12 +78,16 @@ int omerrs = 0;               /* number of errors in lexing and parsing */
 %type <formals> formals_list
 
 %type <expression> expr 
-%type <expressions> exprs_comma exprs_comma_star exprs_semi
+%type <expressions> exprs_semi exprs_comma 
 
 %type <case_> case
 %type <cases> cases
+/*
+%type <expressions> exprs_comma_star exprs_semi
 
+*/
 /* Precedence declarations go here. */
+%left LET
 %right ASSIGN
 %left NOT
 %nonassoc '<' '=' LE
@@ -93,6 +97,7 @@ int omerrs = 0;               /* number of errors in lexing and parsing */
 %left '~'
 %left '@'
 %left '.'
+
 
 %%
 /* 
@@ -112,15 +117,16 @@ class_list
 
 /* If no parent is specified, the class inherits from the Object class. */
 class	: CLASS TYPEID '{' feature_list '}' ';'
-		{ $$ = class_($2,idtable.add_string("Object"),$4,
-			      stringtable.add_string(curr_filename)); }
+		{ $$ = class_($2,idtable.add_string("Object"),$4,stringtable.add_string(curr_filename)); }
+	| CLASS TYPEID '{' '}' ';'
+		{ $$ = class_($2,idtable.add_string("Object"),nil_Features(),stringtable.add_string(curr_filename)); } 
 	| CLASS TYPEID INHERITS TYPEID '{' feature_list '}' ';'
 		{ $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
+	| CLASS TYPEID INHERITS TYPEID '{' '}' ';'
+		{ $$ = class_($2,$4,nil_Features(),stringtable.add_string(curr_filename)); }
 	;
 
-feature_list	: /* empty */
-			{ $$ = nil_Features(); }
-		| feature ';'
+feature_list	: feature ';'
 			{ $$ = single_Features($1); }
 		| feature_list feature ';'
 			{ $$ = append_Features($1, single_Features($2)); }
@@ -142,24 +148,13 @@ formals_list	: formal
 	     	| formals_list ',' formal 
 			{ $$ = append_Formals($1, single_Formals($3)); }
 		;
-
-exprs_comma_star	:  /* empty */
-	   			{ $$ = nil_Expressions(); }
-			| ',' expr 
-	    			{ $$ = single_Expressions($2); }
-	        	| exprs_comma_star ',' expr 
-				{ $$ = append_Expressions($1, single_Expressions($3)); }
-			;
-
-exprs_comma	:  /* empty */
-	    		{ $$ = nil_Expressions(); }
-		| expr exprs_comma_star
-			{ $$ = append_Expressions(single_Expressions($1), $2); }
+exprs_comma	: expr
+	    		{ $$ = single_Expressions($1); }
+		| exprs_comma ',' expr
+			{ $$ = append_Expressions($1, single_Expressions($3)); }
 		;
 
-exprs_semi	:  /* empty */
-	   		{ $$ = nil_Expressions(); }
-		| expr ';'
+exprs_semi	: expr ';'
 			{ $$ = single_Expressions($1); }
 		| exprs_semi expr ';'
 			{ $$ = append_Expressions($1, single_Expressions($2)); }
@@ -177,10 +172,16 @@ cases 	: case
 
 expr	: OBJECTID ASSIGN expr
      		{ $$ = assign($1, $3); }
+	| expr '@' TYPEID '.' OBJECTID '(' ')'
+		{ $$ = static_dispatch($1, $3, $5, nil_Expressions()); }
 	| expr '@' TYPEID '.' OBJECTID '(' exprs_comma ')'
 		{ $$ = static_dispatch($1, $3, $5, $7); }
+	| OBJECTID '(' ')'
+		{ $$ = dispatch(object(idtable.add_string("self")), $1, nil_Expressions()); }
 	| OBJECTID '(' exprs_comma ')'
 		{ $$ = dispatch(object(idtable.add_string("self")), $1, $3); }
+	| expr '.' OBJECTID '(' ')'
+		{ $$ = dispatch($1, $3, nil_Expressions()); }
 	| expr '.' OBJECTID '(' exprs_comma ')'
 		{ $$ = dispatch($1, $3, $5); }
 	| IF expr THEN expr ELSE expr FI
@@ -189,9 +190,11 @@ expr	: OBJECTID ASSIGN expr
 		{ $$ = loop($2, $4); }
 	| '{' exprs_semi '}'
 		{ $$ = block($2); }
-	| LET OBJECTID ':' TYPEID IN expr
+	| '{' '}'
+		{ $$ = block(nil_Expressions()); }
+	| LET OBJECTID ':' TYPEID IN expr %prec LET
 		{ $$ = let($2, $4, no_expr(), $6); }
-	| LET OBJECTID ':' TYPEID ASSIGN expr IN expr
+	| LET OBJECTID ':' TYPEID ASSIGN expr IN expr %prec LET
 		{ $$ = let($2, $4, $6, $8); }
 	| CASE expr OF cases ESAC
 		{ $$ = typcase($2, $4); }
@@ -218,8 +221,8 @@ expr	: OBJECTID ASSIGN expr
 	| NOT expr
 		{ $$ = comp($2); }
 	| '(' expr ')'
-		{ $$ = $2; }
-     	| OBJECTID 
+		{ $$ = $2; } 
+	| OBJECTID 
      		{ $$ = object($1); }
      	| STR_CONST
 		{ $$ = string_const($1); }

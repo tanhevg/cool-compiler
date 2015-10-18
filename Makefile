@@ -33,7 +33,7 @@ BISON= bison ${BFLAGS}
 DEPEND = ${CC} -MM ${CPPINCLUDE}
 
 test: parser
-	parser -o 1.out 1.cl > 1.tree
+	parser -po 1.out 1.cl > 1.tree 2>&1
 
 parser: ${OBJS}
 	${CC} ${CFLAGS} ${OBJS} ${LIB} -o parser
