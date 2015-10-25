@@ -1,13 +1,2 @@
-*.cc
-*.h
-*.d
-parser
-README
-*.out*
-*.o
-*.aps
-*.swp
-*.tree
-*.log
-good.cl
-bad.cl
+.idea
+
