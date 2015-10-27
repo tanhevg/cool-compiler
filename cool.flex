@@ -5,7 +5,6 @@
 
 #define yylval cool_yylval
 #define yylex  cool_yylex
-#define curr_lineno curr_lineno;
 
 extern int lex_verbose;
 
