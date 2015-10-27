@@ -5,7 +5,7 @@ extern int cool_yylex(void);
 
 extern FILE *yyin;
 extern int yylineno;
-extern int lex_verbose;
+int lex_verbose;
 YYSTYPE cool_yylval;
 int cool_yydebug;        // for the parser
 char *curr_filename;

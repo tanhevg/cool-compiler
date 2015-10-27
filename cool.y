@@ -138,6 +138,8 @@ feature_list	: feature ';'
 
 feature	: OBJECTID '(' formals_list ')' ':' TYPEID '{' expr '}' 
 		{ $$ = method($1, $3, $6, $8); }
+	| OBJECTID '(' ')' ':' TYPEID '{' expr '}' 
+		{ $$ = method($1, nil_Formals(), $5, $7); } 
 	| OBJECTID ':' TYPEID opt_assign
 		{ $$ = attr($1, $3, $4); }
 	;

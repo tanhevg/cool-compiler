@@ -337,7 +337,7 @@ int main( int argc, char **argv ) {
         const char *filename = argv[1];
         yyin = fopen(filename, "r");
 	if (!yyin) {
-	    printf("Could not open %s\n", filename);
+	    cerr << "Could not open " << filename << endl;
 	    return 1;
         }
 	// cout << "Opened " << filename << "\n";

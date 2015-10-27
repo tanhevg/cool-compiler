@@ -38,7 +38,7 @@ Memmgr_Debug cgen_Memmgr_Debug = GC_QUICK; // check heap frequently
 // used for option processing (man 3 getopt for more info)
 extern int optind, opterr;
 extern char *optarg;
-extern char *curr_filename;
+char *curr_filename;
 
 void handle_flags(int argc, char *argv[]) {
     int c;
@@ -53,6 +53,7 @@ void handle_flags(int argc, char *argv[]) {
     cgen_optimize = 0;
     disable_reg_alloc = 0;
     out_filename = nullptr;
+    curr_filename = nullptr;
 
 
     while ((c = getopt(argc, argv, "lpscvrOo:gtT")) != -1) {
