@@ -19,6 +19,10 @@
 
 #include "cool-parse.h"
 
+#include <memory>
+
+using namespace std;
+
 //
 // These globals keep everything working.
 //
@@ -38,9 +42,7 @@ extern void handle_flags(int argc, char *argv[]);
 extern FILE *yyin;
 extern char *out_filename;
 
-void dump(ostream &out) {
-    ast_root->dump_with_types(out, 0);
-}
+typedef unique_ptr<ostream, function<void(ostream*)>> stream_ptr;
 
 int main(int argc, char *argv[]) {
     handle_flags(argc, argv);
@@ -50,13 +52,12 @@ int main(int argc, char *argv[]) {
         cout << "Could not open " << curr_filename << endl;
     }
     cool_yyparse();
+    stream_ptr out(&cout, [](ostream*){});
     if (out_filename) {
         cout << "Writing to file " << out_filename << endl;
-        ofstream tree_file{out_filename};
-        dump(tree_file);
-    } else {
-        dump(cout);
+        out = stream_ptr(new ofstream(out_filename), default_delete<ostream>());
     }
+    ast_root->dump_with_types(*out, 0);
     if (omerrs != 0) {
         cerr << "Compilation halted due to lex and parse errors\n";
         return 1;
