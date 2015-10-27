@@ -83,7 +83,7 @@ int omerrs = 0;               /* number of errors in lexing and parsing */
 %type <case_> case
 %type <cases> cases
 
-/* Precedence declarations go here. */
+/* Precedence declarations go here. Higher line number means higher preference. */
 %left LET
 %right ASSIGN
 %left NOT
@@ -94,22 +94,25 @@ int omerrs = 0;               /* number of errors in lexing and parsing */
 %left '~'
 %left '@'
 %left '.'
+%left '(' ')'
 
 
 %%
 /* 
    Save the root of the abstract syntax tree in a global variable.
 */
-program	: class_list	{ ast_root = program($1); }
+program	: class_list	{ ast_root = program($1); parse_results = $1; }
         ;
 
 class_list
 	: class			/* single class */
-		{ $$ = single_Classes($1);
-                  parse_results = $$; }
+		{ $$ = single_Classes($1);  }
+	| error ';'
+		{ $$ = nil_Classes();  }
 	| class_list class	/* several classes */
-		{ $$ = append_Classes($1,single_Classes($2)); 
-                  parse_results = $$; }
+		{ $$ = append_Classes($1,single_Classes($2)); }
+	| class_list error ';'
+		{ $$ = append_Classes($1,nil_Classes()); }
 	;
 
 /* If no parent is specified, the class inherits from the Object class. */
@@ -125,9 +128,14 @@ class	: CLASS TYPEID '{' feature_list '}' ';'
 
 feature_list	: feature ';'
 			{ $$ = single_Features($1); }
+		| error ';'
+			{ $$ = nil_Features(); }
 		| feature_list feature ';'
 			{ $$ = append_Features($1, single_Features($2)); }
+		| feature_list error ';'
+			{ $$ = append_Features($1, nil_Features()); }
 		;
+
 feature	: OBJECTID '(' formals_list ')' ':' TYPEID '{' expr '}' 
 		{ $$ = method($1, $3, $6, $8); }
 	| OBJECTID ':' TYPEID opt_assign
@@ -171,10 +179,13 @@ opt_assign	: /* empty */
 			{ $$ = $2; }
 		;
 
-let_expr	: OBJECTID ':' TYPEID opt_assign IN expr %prec LET
+let_expr	: OBJECTID ':' TYPEID opt_assign IN expr 
+	 		%prec LET
 	 		{ $$ = let($1, $3, $4, $6); }
 		| OBJECTID ':' TYPEID opt_assign ',' let_expr
 			{ $$ = let($1, $3, $4, $6); }
+		| error ',' let_expr
+			{ $$ = $3; }
 		;
 
 expr	: OBJECTID ASSIGN expr
@@ -198,7 +209,9 @@ expr	: OBJECTID ASSIGN expr
 	| '{' exprs_semi '}'
 		{ $$ = block($2); }
 	| '{' '}'
-		{ $$ = block(nil_Expressions()); }
+		{ $$ = no_expr(); }
+	| '{' error '}'
+		{ $$ = no_expr(); }
 	| LET let_expr 
 		{ $$ = $2; }
 	| CASE expr OF cases ESAC
@@ -229,7 +242,7 @@ expr	: OBJECTID ASSIGN expr
 		{ $$ = $2; } 
 	| OBJECTID 
      		{ $$ = object($1); }
-     	| STR_CONST
+	| STR_CONST
 		{ $$ = string_const($1); }
 	| INT_CONST
 		{ $$ = int_const($1); }

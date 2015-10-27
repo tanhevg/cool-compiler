@@ -13,10 +13,10 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdio.h>     // for Linux system
-#include <unistd.h>    // for getopt
+
 #include "cool-io.h"  //includes iostream
 #include "cool-tree.h"
-#include "utilities.h"  // for fatal_error
+
 #include "cool-parse.h"
 
 //
@@ -38,6 +38,9 @@ extern void handle_flags(int argc, char *argv[]);
 extern FILE *yyin;
 extern char *out_filename;
 
+void dump(ostream &out) {
+    ast_root->dump_with_types(out, 0);
+}
 
 int main(int argc, char *argv[]) {
     handle_flags(argc, argv);
@@ -47,16 +50,16 @@ int main(int argc, char *argv[]) {
         cout << "Could not open " << curr_filename << endl;
     }
     cool_yyparse();
+    if (out_filename) {
+        cout << "Writing to file " << out_filename << endl;
+        ofstream tree_file{out_filename};
+        dump(tree_file);
+    } else {
+        dump(cout);
+    }
     if (omerrs != 0) {
         cerr << "Compilation halted due to lex and parse errors\n";
-        exit(1);
-    }
-    if (out_filename) {
-        ofstream tree_file{out_filename};
-        cout << "Writing to file " << out_filename << endl;
-        ast_root->dump(tree_file, 0);
-    } else {
-        ast_root->dump_with_types(cout, 0);
+        return 1;
     }
     return 0;
 }

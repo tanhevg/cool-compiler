@@ -8,7 +8,7 @@ include_directories("${PROJECT_SOURCE_DIR}/tree")
 add_subdirectory(cooldist)
 add_subdirectory(tree)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 
 set(LEXER_SOURCE_FILES lexer-main.cc cool-lex.cc)
 set(PARSER_SOURCE_FILES parser-main.cc cool-parse.cc cool-lex.cc)
