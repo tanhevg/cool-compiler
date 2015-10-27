@@ -21,8 +21,7 @@ int main(int argc, char **argv) {
         }
         // cout << "Opened " << filename << "\n";
     }
-    yylineno = 0;
     while (cool_yylex()) { }
-//    cout << "line count: " << curr_lineno << "\n";
+    cout << "line count: " << yylineno << "\n";
     return 0;
 }

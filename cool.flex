@@ -5,14 +5,18 @@
 
 #define yylval cool_yylval
 #define yylex  cool_yylex
-
+#define curr_lineno curr_lineno;
 
 extern int lex_verbose;
 
-#define LOG_LEVEL 1 
+#define LOG_LEVEL 1
 #define LOGE \
 if (lex_verbose) { \
     cout << "Scanned error: '" << cool_yylval.error_msg << "'\n"; \
+}
+#define LOG(msg) \
+if (lex_verbose) { \
+    cout << msg << endl; \
 }
 #define LOGS(token) \
 if (lex_verbose) { \
@@ -36,12 +40,12 @@ char string_buf[MAX_STR_CONST]; /* to assemble string constants */
 char *string_buf_ptr;
 
 extern YYSTYPE cool_yylval;
-int curr_lineno=0;
+int curr_lineno=1;
 int mcomment_count; /* to handle nested multiline comments */
 %}
 
 SCOMMENT	--.* 
-MCOMMENT	[\(\)\*]|[^\(\)\*]+
+MCOMMENT	[\(\)\*]|[^\(\)\*\n]+
 MCOMMENT_START	\(\*
 MCOMMENT_END	\*\)
 NEWLINE		\n
@@ -321,6 +325,7 @@ NOT		[Nn][Oo][Tt]
 <MCOMMENT>{MCOMMENT} /* eat up all characters except new line in multi line comments in maximum chunks*/
 
 <INITIAL,MCOMMENT>{NEWLINE} {
+	LOG("line number " << curr_lineno);
 	curr_lineno++;
 }
 
@@ -331,19 +336,3 @@ NOT		[Nn][Oo][Tt]
 }
 
 %%
-/*
-int main( int argc, char **argv ) {
-    if (argc >= 0) {
-        const char *filename = argv[1];
-        yyin = fopen(filename, "r");
-	if (!yyin) {
-	    cerr << "Could not open " << filename << endl;
-	    return 1;
-        }
-	// cout << "Opened " << filename << "\n";
-    }
-    yylineno = 0;
-    while (yylex()) {}
-//    cout << "line count: " << curr_lineno << "\n";
-}
-*/

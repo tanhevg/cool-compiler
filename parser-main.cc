@@ -46,15 +46,15 @@ typedef unique_ptr<ostream, function<void(ostream *)>> stream_ptr;
 int main(int argc, char *argv[]) {
     ast_root = NULL;
     handle_flags(argc, argv);
-    cout << "Parser phase " << (curr_filename ? curr_filename : "") << endl;
     if (curr_filename) {
+        cout << "Parsing " << curr_filename << endl;
         yyin = fopen(curr_filename, "r");
         if (!yyin) {
             cerr << "Could not open " << curr_filename << endl;
             return 2;
         }
     } else {
-        cout << "Reading from standard input" << endl;
+        cout << "Parsing standard input" << endl;
         curr_filename = "<stdin>";// used in parser; if left null will cause a seg fault
     }
     cool_yyparse();
