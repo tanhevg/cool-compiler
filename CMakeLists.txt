@@ -7,6 +7,7 @@ include_directories("${PROJECT_SOURCE_DIR}/cooldist")
 include_directories("${PROJECT_SOURCE_DIR}/tree")
 add_subdirectory(cooldist)
 add_subdirectory(tree)
+add_subdirectory(semant)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 
@@ -22,5 +23,5 @@ add_executable(cool-lexer ${LEXER_SOURCE_FILES})
 target_link_libraries(cool-lexer cooldist l)
 
 add_executable(cool-parser ${PARSER_SOURCE_FILES})
-target_link_libraries(cool-parser cooldist tree l)
+target_link_libraries(cool-parser cooldist tree semant l)
 

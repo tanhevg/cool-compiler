@@ -16,6 +16,7 @@
 #include "cool-tree.h"
 
 #include "cool-parse.h"
+#include "semant/semant.h"
 
 
 using std::unique_ptr;
@@ -70,6 +71,7 @@ int main(int argc, char *argv[]) {
         cerr << "Compilation halted due to lex and parse errors\n";
         return 1;
     }
+    ast_root->semant();
     return 0;
 }
 

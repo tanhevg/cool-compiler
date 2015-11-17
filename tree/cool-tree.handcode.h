@@ -45,21 +45,27 @@ typedef list_node<Case> Cases_class;
 typedef Cases_class *Cases;
 
 #define Program_EXTRAS                          \
-virtual void dump_with_types(ostream&, int) = 0; 
+virtual void semant() = 0;						\
+virtual void dump_with_types(ostream&, int) = 0;
 
 
 
 #define program_EXTRAS                          \
-void dump_with_types(ostream&, int);            
+void semant();									\
+void dump_with_types(ostream&, int);
 
 #define Class__EXTRAS                   \
 virtual Symbol get_filename() = 0;      \
-virtual void dump_with_types(ostream&,int) = 0; 
+virtual void dump_with_types(ostream&,int) = 0; \
+virtual Symbol get_name() = 0;					\
+virtual Symbol get_parent() = 0;
 
 
 #define class__EXTRAS                                 \
 Symbol get_filename() { return filename; }             \
-void dump_with_types(ostream&,int);                    
+void dump_with_types(ostream&,int);                    \
+Symbol get_name();										\
+Symbol get_parent();
 
 
 #define Feature_EXTRAS                                        \

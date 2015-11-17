@@ -42,6 +42,19 @@ void class__class::dump(ostream& stream, int n)
 }
 
 
+Symbol class__class::get_name()
+{
+    return name;
+}
+
+Symbol class__class::get_parent()
+{
+    return parent;
+}
+
+
+
+
 Feature method_class::copy_Feature()
 {
    return new method_class(copy_Symbol(name), formals->copy_list(), copy_Symbol(return_type), expr->copy_Expression());
@@ -658,4 +671,5 @@ Expression object(Symbol name)
 {
   return new object_class(name);
 }
+
 
