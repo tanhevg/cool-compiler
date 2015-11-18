@@ -175,13 +175,13 @@ NOT		[Nn][Oo][Tt]
 } 
 
 {TYPEID} {
-    cool_yylval.symbol = inttable.add_string(yytext,yyleng);
+    cool_yylval.symbol = idtable.add_string(yytext,yyleng);
     LOGS(TYPEID);
     return TYPEID;
 }
 
 {OBJECTID} {
-    cool_yylval.symbol = inttable.add_string(yytext,yyleng);
+    cool_yylval.symbol = idtable.add_string(yytext,yyleng);
     LOGS(OBJECTID);
     return OBJECTID;
 }
@@ -196,7 +196,7 @@ NOT		[Nn][Oo][Tt]
     BEGIN(INITIAL);
     if (string_buf_ptr < string_buf + MAX_STR_CONST) {
         *string_buf_ptr = '\0';
-        cool_yylval.symbol = inttable.add_string(string_buf);
+        cool_yylval.symbol = stringtable.add_string(string_buf);
 	LOGS(STR_CONST);
         return STR_CONST;
     } else {

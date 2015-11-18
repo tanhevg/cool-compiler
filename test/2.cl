@@ -1,5 +1,5 @@
 (*class Q inherits Q {};*)
-(*class Q inherits IO {};*)
+class Q inherits IO {};
 (*classB{
 };*)
 

@@ -37,6 +37,7 @@ Elem *StringTable<Elem>::add_string(char *s, int maxchars)
       return l->hd();
 
   Elem *e = new Elem(s,len,index++);
+//  cout << "add " << s << " (" << (void*)e << ") to " << this << endl;
   tbl = new List<Elem>(e, tbl);
   return e;
 }
