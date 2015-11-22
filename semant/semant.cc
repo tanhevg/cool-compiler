@@ -86,16 +86,16 @@ static void initialize_constants(void)
 
 
 
-ClassTable::ClassTable(Classes classes) :
-        semant_errors(0) , error_stream(cerr),
-        m_pInheritanceTable(make_unique<InheritanceTable>(InheritanceTable(this)))
+ClassTable::ClassTable(Classes classes, SemantErrorP _pSemantError, InheritanceTableP _pInheritanceTable) :
+        m_pInheritanceTable(_pInheritanceTable),
+        m_pSemantError(_pSemantError)
 {
 
     install_basic_classes();
     for(int i = classes->first(); classes->more(i); i = classes->next(i)) {
         Class_ cls = classes->nth(i);
         add_class(cls);
-        m_pInheritanceTable->add_node(cls, true);
+        m_pInheritanceTable->add_node(cls);
     }
 
 }
@@ -104,7 +104,7 @@ void ClassTable::add_class(Class_ cls)
 {
     Class_ &old_cls = class_by_name[cls->get_name()];
     if (old_cls != nullptr) {
-        semant_error(cls) << "Duplicate class with name " << cls->get_name() << endl;
+        m_pSemantError->semant_error(cls) << "Duplicate class with name " << cls->get_name() << endl;
         return;
     }
     old_cls = cls;
@@ -112,7 +112,7 @@ void ClassTable::add_class(Class_ cls)
 
 Class_ ClassTable::get_class(Symbol s)
 {
-    return class_by_name.at(s);
+    return class_by_name[s];
 }
 
 
@@ -228,39 +228,6 @@ void ClassTable::install_basic_classes() {
     m_pInheritanceTable->add_node(IO_class, true);
 }
 
-////////////////////////////////////////////////////////////////////
-//
-// semant_error is an overloaded function for reporting errors
-// during semantic analysis.  There are three versions:
-//
-//    ostream& ClassTable::semant_error()                
-//
-//    ostream& ClassTable::semant_error(Class_ c)
-//       print line number and filename for `c'
-//
-//    ostream& ClassTable::semant_error(Symbol filename, tree_node *t)  
-//       print a line number and filename
-//
-///////////////////////////////////////////////////////////////////
-
-ostream& ClassTable::semant_error(Class_ c)
-{                                                             
-    return semant_error(c->get_filename(),c);
-}    
-
-ostream& ClassTable::semant_error(Symbol filename, tree_node *t)
-{
-    error_stream << filename << ":" << t->get_line_number() << ": ";
-    return semant_error();
-}
-
-ostream& ClassTable::semant_error()                  
-{                                                 
-    semant_errors++;                            
-    return error_stream;
-} 
-
-
 
 /*   This is the entry point to the semantic checker.
 
@@ -279,15 +246,18 @@ void program_class::semant()
 {
     initialize_constants();
 
+    SemantErrorP pSemantError = make_shared<SemantError>(SemantError());
+    InheritanceTableP pInheritanceTable = make_shared<InheritanceTable>(InheritanceTable(pSemantError));
+
     /* ClassTable constructor may do some semantic analysis */
-    ClassTable *classtable = new ClassTable(classes);
+    ClassTableP classtable = new ClassTable(classes, pSemantError, pInheritanceTable);
 
     classtable->check_inheritance_errors();
 
     /* some semantic analysis code may go here */
 
     semant_stop:
-    if (classtable->errors()) {
+    if (pSemantError->errors()) {
 	cerr << "Compilation halted due to static semantic errors." << endl;
 	exit(1);
     }
@@ -295,11 +265,4 @@ void program_class::semant()
 
 void ClassTable::check_inheritance_errors() {
     m_pInheritanceTable->check_inheritance_errors();
-}
-
-template<typename Op>
-void ClassTable::for_each_class(Op op) {
-    for (auto mit: class_by_name) {
-        op(mit.second);
-    }
 }

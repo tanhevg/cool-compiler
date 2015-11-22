@@ -4,16 +4,12 @@
 
 #include "inheritance.h"
 
-InheritanceTable::InheritanceTable(ClassTableP _pClassTable): pClassTable(_pClassTable)
-{
-
-}
-
 void InheritanceTable::add_node(Class_ _cls, bool can_inherit_from)
 {
     const Symbol class_name = _cls->get_name();
 //    cout << "Add inheritance node " << class_name << " " << (void*)(class_name) <<  endl;
-    InheritanceNodeP pNode = make_shared<InheritanceNode>(InheritanceNode(_cls, can_inherit_from));
+    InheritanceNodeP pNode = make_shared<TreeNode<InheritanceNode>>(TreeNode<InheritanceNode>(
+            make_shared<InheritanceNode>(InheritanceNode(_cls, m_pSemantError, can_inherit_from))));
     node_by_name[class_name] = pNode;
     if (idtable.lookup_string("Object") == class_name) {
         object_root = pNode;
@@ -21,60 +17,60 @@ void InheritanceTable::add_node(Class_ _cls, bool can_inherit_from)
 //    cout << "insert: node_by_name[" << class_name << " " << (void*)(class_name) << "] = " << pNode << endl;
 }
 
+
 void InheritanceTable::check_inheritance_errors() {
-    if (pClassTable->errors()) {
+    if (m_pSemantError->errors()) {
         return;
     }
     for (auto& ppNode : node_by_name) {
         InheritanceNodeP pNode = ppNode.second;
-        if (pNode->get_class()->get_name() != idtable.lookup_string("Object")) {
-            const Symbol parent_name = pNode->get_class()->get_parent();
+        Class_ class_ = pNode->get_data()->get_class();
+        Symbol const node_name = class_->get_name();
+        if (node_name != idtable.lookup_string("Object")) {
+            const Symbol parent_name = class_->get_parent();
             InheritanceNodeP pParent = node_by_name[parent_name];
 //            cout << "lookup: node_by_name[" << parent_name << " " << (void*)(parent_name) << "] = " << pParent << endl;
             if (pParent == nullptr) {
-                pClassTable->semant_error(pNode->get_class())
-                << pNode->get_class()->get_name()
+                m_pSemantError->semant_error(class_)
+                << node_name
                 << ": undefined parent: "
-                << pNode->get_class()->get_parent()
+                << parent_name
                 << endl;
                 return;
             }
-            if (!pParent->can_inherit_from()) {
-                pClassTable->semant_error(pNode->get_class())
-                << pNode->get_class()->get_name()
+            if (!pParent->get_data()->can_inherit_from()) {
+                m_pSemantError->semant_error(class_)
+                << node_name
                 << ": cannot inherit from "
-                << pNode->get_class()->get_parent()
+                << parent_name
                 << endl;
                 return;
             }
             pParent->add_child(pNode);
         }
     }
-    bool no_cycles = object_root->visit(pClassTable);
+
+
+    bool no_cycles = object_root->traverse_top_if_true([](shared_ptr<InheritanceNode> node) {
+        return node->check_cycles();
+    });
     if (no_cycles) {
         for (auto ppNode : node_by_name) {
             InheritanceNodeP pNode = ppNode.second;
-            if (!pNode->count_ok()) {
-                pClassTable->semant_error(pNode->get_class())
-                    << pNode->get_class()->get_name() << ": cyclic inheritance" << endl;
+            if (!pNode->get_data()->count_ok()) {
+                m_pSemantError->semant_error(pNode->get_data()->get_class())
+                    << ": cyclic inheritance" << endl;
                 return;
             }
         }
     }
 }
 
-bool InheritanceNode::visit(ClassTableP pClassTable) {
+bool InheritanceNode::check_cycles() {
     ++visit_count;
     if (visit_count > 1) {
-        pClassTable->semant_error(class_)
-            << class_->get_name() << ": cyclic inheritance" << endl;
+        m_pSemantError->semant_error(class_) << ": cyclic inheritance" << endl;
         return false;
-    }
-    for (auto pNode = children.begin(); pNode != children.end(); pNode++ ) {
-        InheritanceNodeP node = *pNode;
-        if (!node->visit(pClassTable)) {
-            return false;
-        }
     }
     return true;
 }

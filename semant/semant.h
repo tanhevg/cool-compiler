@@ -10,13 +10,16 @@
 #include "cool-tree.h"
 #include "stringtab.h"
 #include "inheritance.h"
+#include "semant_error.h"
 
 using std::map;
 using std::pair;
 using std::unique_ptr;
+using std::shared_ptr;
 using std::vector;
 using std::make_pair;
 using std::make_unique;
+using std::make_shared;
 using std::get;
 
 
@@ -28,8 +31,7 @@ class ClassTable;
 typedef ClassTable *ClassTableP;
 
 class InheritanceTable;
-
-typedef unique_ptr<InheritanceTable> InheritanceTableP;
+typedef shared_ptr<InheritanceTable> InheritanceTableP;
 
 
 //typedef InheritanceNode *InheritanceNodeP;
@@ -41,24 +43,19 @@ typedef unique_ptr<InheritanceTable> InheritanceTableP;
 // you like: it is only here to provide a container for the supplied
 // methods.
 
+
 class ClassTable {
 private:
-    int semant_errors;
     void install_basic_classes();
-    ostream &error_stream;
     map<Symbol, Class_> class_by_name;
 
     void add_class(Class_);
     InheritanceTableP m_pInheritanceTable;
+    SemantErrorP m_pSemantError;
 
 public:
-    ClassTable(Classes);
+    ClassTable(Classes, SemantErrorP, InheritanceTableP);
     Class_ get_class(Symbol s);
-    template<typename Op> void for_each_class(Op op);
-    int errors() { return semant_errors; }
-    ostream &semant_error();
-    ostream &semant_error(Class_ c);
-    ostream &semant_error(Symbol filename, tree_node *t);
     void check_inheritance_errors();
 };
 
