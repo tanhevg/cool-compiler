@@ -33,7 +33,7 @@ void InheritanceTable::check_inheritance_errors() {
             if (pParent == nullptr) {
                 m_pSemantError->semant_error(class_)
                 << node_name
-                << ": undefined parent: "
+                << "undefined parent: "
                 << parent_name
                 << endl;
                 return;
@@ -41,7 +41,7 @@ void InheritanceTable::check_inheritance_errors() {
             if (!pParent->get_data()->can_inherit_from()) {
                 m_pSemantError->semant_error(class_)
                 << node_name
-                << ": cannot inherit from "
+                << "cannot inherit from "
                 << parent_name
                 << endl;
                 return;
@@ -59,7 +59,7 @@ void InheritanceTable::check_inheritance_errors() {
             InheritanceNodeP pNode = ppNode.second;
             if (!pNode->get_data()->count_ok()) {
                 m_pSemantError->semant_error(pNode->get_data()->get_class())
-                    << ": cyclic inheritance" << endl;
+                    << pNode->get_data()->get_class()->get_name() << ": cyclic inheritance" << endl;
                 return;
             }
         }
@@ -67,9 +67,10 @@ void InheritanceTable::check_inheritance_errors() {
 }
 
 bool InheritanceNode::check_cycles() {
-    ++visit_count;
-    if (visit_count > 1) {
-        m_pSemantError->semant_error(class_) << ": cyclic inheritance" << endl;
+    ++m_visit_count;
+    cout << "check cycles " << get_class()->get_name() << " m_visit_count " << m_visit_count << endl;
+    if (m_visit_count > 1) {
+        m_pSemantError->semant_error(class_) << get_class()->get_name() << ": cyclic inheritance" << endl;
         return false;
     }
     return true;

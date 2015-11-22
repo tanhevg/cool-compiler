@@ -29,17 +29,17 @@ typedef shared_ptr<TreeNode<InheritanceNode>> InheritanceNodeP;
 
 class InheritanceNode {
 private:
-    int visit_count;
+    int m_visit_count;
     Class_ class_;
     bool m_can_inherit_from;
     SemantErrorP m_pSemantError;
 public:
     InheritanceNode(Class_ _class_, SemantErrorP _pSemantError, bool p_can_inherit_from) :
-            visit_count(0), class_(_class_), m_pSemantError(_pSemantError), m_can_inherit_from(p_can_inherit_from) { }
+            m_visit_count(0), class_(_class_), m_pSemantError(_pSemantError), m_can_inherit_from(p_can_inherit_from) { }
     Class_ get_class() { return class_;}
 
     bool check_cycles();
-    bool count_ok() {return visit_count == 1;}
+    bool count_ok() {return m_visit_count == 1;}
     bool can_inherit_from() {return m_can_inherit_from; }
 };
 
