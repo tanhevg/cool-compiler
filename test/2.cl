@@ -1,12 +1,12 @@
-(*class Q inherits Q {};
-class Q inherits IO {};
+class Q inherits Q {};
+class Z inherits IO {};
 (*classB{
 };*)
 
 class P inherits R {};
 class O inherits P {};
 class R inherits O {};
-*)
+
 class A {
     set_var(num : Int, s: Str, b:Bool) : SELF_TYPE {
 	{

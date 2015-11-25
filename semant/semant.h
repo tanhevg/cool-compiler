@@ -11,6 +11,7 @@
 #include "stringtab.h"
 #include "inheritance.h"
 #include "semant_error.h"
+#include "symtab.h"
 
 using std::map;
 using std::pair;
@@ -28,16 +29,6 @@ using std::get;
 
 class ClassTable;
 
-typedef ClassTable *ClassTableP;
-
-class InheritanceTable;
-typedef shared_ptr<InheritanceTable> InheritanceTableP;
-
-
-//typedef InheritanceNode *InheritanceNodeP;
-//typedef pair<Class_, InheritanceNodeP> InheritancePair;
-
-
 // This is a structure that may be used to contain the semantic
 // information such as the inheritance graph.  You may use it or not as
 // you like: it is only here to provide a container for the supplied
@@ -49,16 +40,54 @@ private:
     void install_basic_classes();
     map<Symbol, Class_> class_by_name;
 
-    void add_class(Class_);
-    InheritanceTableP m_pInheritanceTable;
-    SemantErrorP m_pSemantError;
+    SemantError& semant_error;
 
 public:
-    ClassTable(Classes, SemantErrorP, InheritanceTableP);
+    ClassTable(Classes, SemantError&);
+    void add_class(Class_);
     Class_ get_class(Symbol s);
-    void check_inheritance_errors();
+    bool is_subtype(Symbol sub, Symbol super);
 };
 
+typedef SymbolTable<Symbol, Symbol> ObjectEnv;
+typedef SymbolTable<pair<Symbol, Symbol>, vector<Symbol>> MethodEnv;
+
+struct TypeEnv {
+public:
+    ClassTable& class_table;
+    ObjectEnv& object_env;
+    MethodEnv& method_env;
+    Class_ current_class;
+
+};
+
+class TreeVisitor {
+public:
+    virtual void before(tree_node* node) const {};
+    virtual void after(tree_node* node) const {};
+
+    virtual void before(class__class* node) const {};
+    virtual void after(class__class* node) const {};
+
+    virtual void before(program_class* node) const {};
+    virtual void after(program_class* node) const {};
+
+    virtual void before(method_class* node) const {};
+    virtual void after(method_class* node) const {};
+
+    virtual void before(attr_class* node) const {};
+    virtual void after(attr_class* node) const {};
+
+    virtual void before(formal_class* node) const {};
+    virtual void after(formal_class* node) const {};
+
+    virtual ~TreeVisitor() {}
+};
+
+class InheritanceChecker;
+class TypeChecker;
+class MethodResolver;
+class AttributeResolver;
 
 
 #endif

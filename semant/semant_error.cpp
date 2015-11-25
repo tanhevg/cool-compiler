@@ -23,7 +23,7 @@
 
 ostream& SemantError::semant_error(Class_ c)
 {
-    return semant_error(c->get_filename(),c);
+    return semant_error(c->get_filename(),c) << "class " << c->get_name() << ": ";
 }
 
 ostream& SemantError::semant_error(Symbol filename, tree_node *t)
@@ -36,6 +36,13 @@ ostream& SemantError::semant_error()
 {
     semant_errors++;
     return error_stream;
+}
+
+void SemantError::check_errors() const {
+    if (semant_errors) {
+        cerr << "Compilation halted due to static semantic errors." << endl;
+        exit(1);
+    }
 }
 
 

@@ -11,6 +11,7 @@
 
 #include "tree.h"
 #include "cool-tree.handcode.h"
+#include "../semant/semant_error.h"
 
 
 // define the class for phylum

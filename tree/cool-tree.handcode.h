@@ -52,6 +52,7 @@ virtual void dump_with_types(ostream&, int) = 0;
 
 #define program_EXTRAS                          \
 void semant();									\
+void traverse_tree(TreeVisitor const &visitor);\
 void dump_with_types(ostream&, int);
 
 #define Class__EXTRAS                   \
@@ -63,6 +64,7 @@ virtual Symbol get_parent() = 0;
 
 #define class__EXTRAS                                 \
 Symbol get_filename() { return filename; }             \
+void traverse_tree(TreeVisitor const &visitor);\
 void dump_with_types(ostream&,int);                    \
 Symbol get_name();										\
 Symbol get_parent();
@@ -75,6 +77,9 @@ virtual void dump_with_types(ostream&,int) = 0;
 #define Feature_SHARED_EXTRAS                                       \
 void dump_with_types(ostream&,int);    
 
+#define attr_EXTRAS	            		            	\
+Symbol get_name();										\
+Symbol get_type();
 
 
 

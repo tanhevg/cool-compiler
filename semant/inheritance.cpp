@@ -7,7 +7,7 @@
 void InheritanceTable::add_node(Class_ _cls, bool can_inherit_from)
 {
     const Symbol class_name = _cls->get_name();
-//    cout << "Add inheritance node " << class_name << " " << (void*)(class_name) <<  endl;
+    cout << "Add inheritance node " << class_name << " " << (void*)(class_name) <<  endl;
     InheritanceNodeP pNode = make_shared<TreeNode<InheritanceNode>>(TreeNode<InheritanceNode>(
             make_shared<InheritanceNode>(InheritanceNode(_cls, m_pSemantError, can_inherit_from))));
     node_by_name[class_name] = pNode;

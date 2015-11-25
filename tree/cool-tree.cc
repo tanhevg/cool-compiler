@@ -53,6 +53,18 @@ Symbol class__class::get_parent()
 }
 
 
+Symbol attr_class::get_name()
+{
+   return name;
+}
+
+Symbol attr_class::get_type()
+{
+   return type_decl;
+}
+
+
+
 
 
 Feature method_class::copy_Feature()

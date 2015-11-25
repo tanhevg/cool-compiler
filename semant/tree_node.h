@@ -18,64 +18,54 @@ class IncorrectParentException{};
 
 
 template <class T>
-class TreeNode {
+class TreeNode: public std::enable_shared_from_this<TreeNode<T>> {
 public:
     typedef shared_ptr<T> PData;
     typedef shared_ptr<TreeNode<T>> PNode;
 private:
     PData m_pData;
     PNode m_pParent;
-    unique_ptr<vector<PNode>> m_pChildren;
+    vector<PNode> m_pChildren;
 public:
+
     TreeNode(const TreeNode&) = delete;
     TreeNode(TreeNode&&) = default;
 
     TreeNode(PData _pData) :
             m_pData(_pData),
-            m_pParent(nullptr),
-            m_pChildren(nullptr)
+            m_pParent()
     {}
     TreeNode(PData _pData, PNode _pParent) :
             m_pData(_pData),
-            m_pParent(_pParent),
-            m_pChildren(nullptr)
+            m_pParent(_pParent)
     {}
     void add_child(PNode _pChild){
-        if (!m_pChildren) {
-            m_pChildren = std::move(make_unique<vector<PNode>>());
-        }
         if (!_pChild->m_pParent) {
-            _pChild->m_pParent = PNode(this);
+            _pChild->m_pParent = this->shared_from_this();
         } else if (_pChild->m_pParent.get() != this) {
             throw IncorrectParentException();
         }
-        m_pChildren->push_back(_pChild);
+        m_pChildren.push_back(_pChild);
     }
     void traverse_top(void(f)(PData)){
         f(m_pData);
-        if (m_pChildren) {
-            for (auto child: *m_pChildren) {
-                child->traverse_top(f);
-            }
+        for (auto& child: m_pChildren) {
+            child->traverse_top(f);
         }
     }
     bool traverse_top_if_true(bool(f)(PData)){
         bool b;
         if ((b = f(m_pData))) {
-            if (m_pChildren) {
-                for (auto child: *m_pChildren) {
-                    child->traverse_top_if_true(f);
-                }
+            for (auto& child: m_pChildren) {
+                child->traverse_top_if_true(f);
             }
         }
         return b;
     }
     void traverse_top_bottom(void(before)(PData), void(after)(PData)){
         before(m_pData);
-        if (m_pChildren) {
-            for (auto child: *m_pChildren) {
-                child->traverse_top_bottom(before, after);
-            }
+        for (auto& child: m_pChildren) {
+            child->traverse_top_bottom(before, after);
         }
         after(m_pData);
     }

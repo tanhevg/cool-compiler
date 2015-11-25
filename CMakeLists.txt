@@ -25,3 +25,5 @@ target_link_libraries(cool-lexer cooldist l)
 add_executable(cool-parser ${PARSER_SOURCE_FILES})
 target_link_libraries(cool-parser cooldist tree semant l)
 
+add_executable(test-app test-main.cpp)
+
