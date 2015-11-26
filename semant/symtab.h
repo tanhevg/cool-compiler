@@ -122,6 +122,15 @@ public:
        return(se);
    }
    
+   ScopeEntry *probe_and_add(SYM s, DAT *i)
+   {
+       if (!probe(s)) {
+           return addid(s, i);
+       } else {
+           return NULL;
+       }
+   }
+
    // Lookup an item through all scopes of the symbol table.  If found
    // it returns the associated information field, if not it returns
    // NULL.

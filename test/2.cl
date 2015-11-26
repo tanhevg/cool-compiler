@@ -1,11 +1,17 @@
-class Q inherits Q {};
-class Z inherits IO {};
-(*classB{
-};*)
+class Z inherits IO {
 
-class P inherits R {};
-class O inherits P {};
-class R inherits O {};
+    a:Int;
+    c:String;
+};
+
+class P inherits Z {
+};
+
+class Q inherits P {
+    a:Int;
+    b:Int;
+};
+
 
 class A {
     set_var(num : Int, s: Str, b:Bool) : SELF_TYPE {
@@ -16,7 +22,7 @@ class A {
 				a*5;
 				b.length();
 			};
-	} 
+	}
     };
 };
 

@@ -54,6 +54,13 @@ typedef SymbolTable<pair<Symbol, Symbol>, vector<Symbol>> MethodEnv;
 
 struct TypeEnv {
 public:
+    TypeEnv(ClassTable& _class_table, ObjectEnv& _object_env, MethodEnv& _method_env) :
+        class_table(_class_table),
+        object_env(_object_env),
+        method_env(_method_env),
+        current_class(nullptr)
+    {}
+
     ClassTable& class_table;
     ObjectEnv& object_env;
     MethodEnv& method_env;
