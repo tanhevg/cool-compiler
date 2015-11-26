@@ -90,7 +90,7 @@ class InheritanceChecker : public TreeVisitor
     SemantError& semant_error;
     vector<Symbol> no_inheritance;
 public:
-    virtual void before(class__class* node) const override
+    virtual void before(class__class* node) override
     {
         if (node->get_name() == Object) {
             return;
@@ -133,15 +133,15 @@ public:
 //            context(new AttributeResolverContext())
     {}
 
-    virtual void before(class__class* node) const override
+    virtual void before(class__class* node) override
     {
         Symbol parent = node->get_parent();
         if (parent != No_class) {
-            type_env.class_table.get_class(parent)->traverse_tree(*this);
+            type_env.class_table.get_class(parent)->traverse_tree(this);
         }
     }
 
-    virtual void before(attr_class* node) const override
+    virtual void before(attr_class* node) override //todo this should go after, to make surre initialiser cannot refer to declared var
     {
         Symbol addr_type = node->get_type();
         Symbol name = node->get_name();
@@ -156,26 +156,26 @@ public:
 
 class TypeChecker: public TreeVisitor
 {
-    TypeEnv *type_env;
+    TypeEnv& type_env;
     SemantError& semant_error;
     AttributeResolver attribute_resolver;
 public:
-    TypeChecker(TypeEnv *_type_env, SemantError& _semant_error):
+    TypeChecker(TypeEnv &_type_env, SemantError& _semant_error):
             type_env(_type_env),
             semant_error(_semant_error),
-            attribute_resolver(*type_env, semant_error)
+            attribute_resolver(type_env, semant_error)
     { }
 
 
-    virtual void before(class__class *node) const override
+    virtual void before(class__class *node) override
     {
-        type_env->current_class = type_env->class_table.get_class(node->get_name());
-        type_env->object_env.enterscope();
-        node->traverse_tree(attribute_resolver);
+        type_env.current_class = type_env.class_table.get_class(node->get_name());
+        type_env.object_env.enterscope();
+        node->traverse_tree(&attribute_resolver);
     }
-    virtual void after(class__class *node) const override
+    virtual void after(class__class *node) override
     {
-        type_env->object_env.exitscope();
+        type_env.object_env.exitscope();
     }
 };
 
@@ -366,7 +366,8 @@ void program_class::semant()
 
     semant_error.check_errors();
 
-    traverse_tree(InheritanceChecker(classtable, semant_error));
+    InheritanceChecker inheritance_checker = InheritanceChecker(classtable, semant_error);
+    traverse_tree(&inheritance_checker);
 
     semant_error.check_errors();
 
@@ -374,41 +375,42 @@ void program_class::semant()
     MethodEnv method_env;
     TypeEnv type_env(classtable, object_env, method_env);
 
-    traverse_tree(TypeChecker(&type_env, semant_error));
+    TypeChecker type_checker = TypeChecker(type_env, semant_error);
+    traverse_tree(&type_checker);
 
     semant_error.check_errors();
     /* some semantic analysis code may go here */
 
 }
 
-void program_class::traverse_tree(const TreeVisitor &visitor)
+void program_class::traverse_tree(TreeVisitor *visitor)
 {
-    visitor.before(this);
+    visitor->before(this);
     classes->traverse_tree(visitor);
-    visitor.after(this);
+    visitor->after(this);
 }
 
-void class__class::traverse_tree(const TreeVisitor &visitor)
+void class__class::traverse_tree(TreeVisitor *visitor)
 {
-    visitor.before(this);
+    visitor->before(this);
     features->traverse_tree(visitor);
-    visitor.after(this);
+    visitor->after(this);
 }
-void attr_class::traverse_tree(const TreeVisitor &visitor)
+void attr_class::traverse_tree(TreeVisitor *visitor)
 {
-    visitor.before(this);
+    visitor->before(this);
     init->traverse_tree(visitor);
-    visitor.after(this);
+    visitor->after(this);
 }
-void formal_class::traverse_tree(const TreeVisitor &visitor)
+void formal_class::traverse_tree(TreeVisitor *visitor)
 {
-    visitor.before(this);
-    visitor.after(this);
+    visitor->before(this);
+    visitor->after(this);
 }
-void method_class::traverse_tree(const TreeVisitor &visitor)
+void method_class::traverse_tree(TreeVisitor *visitor)
 {
-    visitor.before(this);
+    visitor->before(this);
     formals->traverse_tree(visitor);
-    visitor.after(this);
+    visitor->after(this);
 }
 

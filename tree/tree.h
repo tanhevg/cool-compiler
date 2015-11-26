@@ -60,7 +60,7 @@ public:
     virtual tree_node *copy() = 0;
     virtual ~tree_node() { }
     virtual void dump(ostream& stream, int n) = 0;
-    virtual void traverse_tree(TreeVisitor const &visitor) {};
+    virtual void traverse_tree(TreeVisitor *visitor) {};
     int get_line_number();
     tree_node *set(tree_node *);
 };
@@ -131,7 +131,7 @@ public:
     virtual ~list_node() { }
     virtual int len() = 0;
     virtual Elem nth_length(int n, int &len) = 0;
-    virtual void traverse_tree(TreeVisitor const &visitor);
+    virtual void traverse_tree(TreeVisitor *visitor);
 
     static list_node<Elem> *nil();
     static list_node<Elem> *single(Elem);
@@ -433,7 +433,7 @@ template <class Elem> append_node<Elem> *xcons(list_node<Elem> *l, Elem x)
     return new append_node<Elem>(l, list(x));
 }
 
-template <class E> void list_node<E>::traverse_tree(const TreeVisitor &visitor) {
+template <class E> void list_node<E>::traverse_tree(TreeVisitor *visitor) {
 //    visitor.before(this);
     for(int i = this->first(); this->more(i); i = this->next(i)) {
         this->nth(i)->traverse_tree(visitor);
