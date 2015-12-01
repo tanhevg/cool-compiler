@@ -3,6 +3,10 @@
 //
 
 #include <iostream>
+#include <map>
+#include <utility>
+#include <string>
+
 
 using std::endl;
 using std::cout;
@@ -33,14 +37,37 @@ public:
     virtual void test(Test& test) override { cout << "B "; test.test(this); }
 };
 
+class C {
+protected:
+    char *c;
+public:
+    C(char _c) {
+        c = new char[2];
+        c[0] = _c;
+        c[1] = '\0';
+    }
+    ~C() {
+        delete c;
+    }
+};
+
+typedef C* CC;
+
+using namespace std;
 
 int main() {
-    A a;
-    B b;
-    Test1 test;
-    a.test(test);
-    b.test(test);
-    A& a1 = b;
-    a1.test(test);
-    return 0;
+//    A a;
+//    B b;
+//    Test1 test;
+//    a.test(test);
+//    b.test(test);
+//    A& a1 = b;
+//    a1.test(test);
+//    return 0;
+
+    map<pair<string, string>, pair<CC, CC>> m;
+    m[pair<string, string>("a", "b")] = pair<CC, CC>(new C('A'), new C('B'));
+    cout << m[pair<string, string>("a", "b")].first << endl;
+    cout << (m[pair<string, string>("a", "c")].first == NULL) << endl;
+
 }

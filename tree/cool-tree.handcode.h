@@ -83,7 +83,9 @@ Symbol get_name();										\
 Symbol get_type();
 
 #define method_EXTRAS	            		            	\
-void traverse_tree(TreeVisitor *visitor);
+void traverse_tree(TreeVisitor *visitor);	            	\
+Symbol get_return_type();	                				\
+Symbol get_name();
 
 
 
@@ -93,6 +95,7 @@ virtual void dump_with_types(ostream&,int) = 0;
 
 #define formal_EXTRAS                           \
 void traverse_tree(TreeVisitor *visitor);        \
+Symbol get_type();	    		            	\
 void dump_with_types(ostream&,int);
 
 

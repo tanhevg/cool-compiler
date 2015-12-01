@@ -63,6 +63,20 @@ Symbol attr_class::get_type()
    return type_decl;
 }
 
+Symbol formal_class::get_type()
+{
+   return type_decl;
+}
+
+Symbol method_class::get_return_type() 
+{
+   return return_type;
+}
+Symbol method_class::get_name() 
+{
+   return name;
+}
+
 
 
 

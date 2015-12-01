@@ -35,7 +35,8 @@ class ClassTable;
 // methods.
 
 
-class ClassTable {
+class ClassTable
+{
 private:
     void install_basic_classes();
     map<Symbol, Class_> class_by_name;
@@ -46,11 +47,30 @@ public:
     ClassTable(Classes, SemantError&);
     void add_class(Class_);
     Class_ get_class(Symbol s);
+    Symbol get_parent(Symbol class_name);
     bool is_subtype(Symbol sub, Symbol super);
 };
 
-typedef SymbolTable<Symbol, Symbol> ObjectEnv;
-typedef SymbolTable<pair<Symbol, Symbol>, vector<Symbol>> MethodEnv;
+typedef SymbolTable<Symbol, Entry> ObjectEnv;
+
+
+class MethodEnv
+{
+    ClassTable& class_table;
+    map<pair<Symbol, Symbol>, pair<Symbol, vector<Symbol>*>> methods;
+public:
+    MethodEnv(ClassTable& _class_table):
+            class_table(_class_table),
+            methods(map<pair<Symbol, Symbol>, pair<Symbol, vector<Symbol>*>>())
+    {}
+    bool check_method_dynamic(Symbol call_site_type, Symbol method_name, Symbol return_type, vector<Symbol> argument_types)
+    {return false;}
+    bool check_method_static(Symbol call_site_type, Symbol method_name, Symbol return_type, vector<Symbol> argument_types)
+    {return false;}
+    pair<Symbol, vector<Symbol>*> get_method_no_parents(Symbol call_site_type, Symbol method_name);
+    pair<Symbol, vector<Symbol>*> get_method(Symbol call_site_type, Symbol method_name);
+    void add_method(Symbol call_site_type, Symbol method_name, Symbol return_type, vector<Symbol>* argument_types);
+};
 
 struct TypeEnv {
 public:
@@ -88,13 +108,82 @@ public:
     virtual void before(formal_class* node)  {};
     virtual void after(formal_class* node)  {};
 
-    virtual ~TreeVisitor() {}
 };
 
-class InheritanceChecker;
-class TypeChecker;
-class MethodResolver;
-class AttributeResolver;
+class InheritanceChecker : public TreeVisitor
+{
+    ClassTable& class_table;
+    SemantError& semant_error;
+    vector<Symbol> no_inheritance;
+public:
+    virtual void before(class__class* node) override;
+    InheritanceChecker(ClassTable& _class_table, SemantError& _semant_error);
+};
+
+class AttributeResolver : public TreeVisitor
+{
+private:
+    TypeEnv& type_env;
+    SemantError& semant_error;
+public:
+    AttributeResolver(TypeEnv& _type_env, SemantError&  _semant_error) :
+            type_env(_type_env),
+            semant_error(_semant_error)
+    {}
+
+    virtual void before(class__class* node) override;
+    virtual void before(attr_class* node) override;
+};
+
+
+class TypeChecker: public TreeVisitor
+{
+    TypeEnv& type_env;
+    SemantError& semant_error;
+    AttributeResolver attribute_resolver;
+public:
+    TypeChecker(TypeEnv &_type_env, SemantError& _semant_error):
+            type_env(_type_env),
+            semant_error(_semant_error),
+            attribute_resolver(type_env, semant_error)
+    { }
+
+    virtual void before(class__class *node) override;
+
+    virtual void after(class__class *node) override;
+};
+
+class MethodResolver : public TreeVisitor
+{
+    TypeEnv& type_env;
+    vector<Symbol> *formal_types;
+    Symbol class_name;
+public:
+    MethodResolver(TypeEnv& _type_env) :
+            type_env(_type_env),
+            formal_types(nullptr)
+    {}
+
+
+    virtual void before(class__class *node) override;
+    virtual void before(method_class *node) override;
+
+    virtual void after(method_class *node) override;
+    virtual void after(formal_class *node) override;
+};
+
+class MethodChecker : public TreeVisitor {
+    TypeEnv &type_env;
+    Symbol class_name;
+    SemantError &semant_error;
+public:
+    MethodChecker(TypeEnv &_type_env, SemantError &_semant_error) :
+            type_env(_type_env),
+            semant_error(_semant_error) { }
+    virtual void before(class__class *node) override;
+    virtual void before(method_class *node) override;
+
+};
 
 
 #endif

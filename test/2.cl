@@ -1,6 +1,6 @@
 class Z inherits IO {
 
-    a:Int;
+    a():Int{};
     c:String;
 };
 
@@ -8,7 +8,7 @@ class P inherits Z {
 };
 
 class Q inherits P {
-    a:Int;
+    b():String{};
     b:Int;
 };
 
