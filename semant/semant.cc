@@ -2,9 +2,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include "semant.h"
-#include "utilities.h"
-#include "inheritance.h"
-
 
 extern int semant_debug;
 extern char *curr_filename;
@@ -25,7 +22,7 @@ static Symbol
         Bool,
         concat,
         cool_abort,
-        copy,
+        copy_,
         Int,
         in_int,
         in_string,
@@ -56,7 +53,7 @@ static void initialize_constants(void) {
     Bool = idtable.add_string("Bool");
     concat = idtable.add_string("concat");
     cool_abort = idtable.add_string("abort");
-    copy = idtable.add_string("copy");
+    copy_ = idtable.add_string("copy");
     Int = idtable.add_string("Int");
     in_int = idtable.add_string("in_int");
     in_string = idtable.add_string("in_string");
@@ -84,7 +81,6 @@ static void initialize_constants(void) {
 
 ClassTable::ClassTable(Classes classes, SemantError &_semant_error) : semant_error(_semant_error) {
 
-    install_basic_classes();
     for (int i = classes->first(); classes->more(i); i = classes->next(i)) {
         Class_ cls = classes->nth(i);
         add_class(cls);
@@ -125,7 +121,7 @@ bool ClassTable::is_subtype(Symbol sub, Symbol super) {
 }
 
 
-void ClassTable::install_basic_classes() {
+void program_class::install_basic_classes() {
 
     // The tree package uses these globals to annotate the classes built below.
     // curr_lineno  = 0;
@@ -149,15 +145,15 @@ void ClassTable::install_basic_classes() {
     // There is no need for method bodies in the basic classes---these
     // are already built in to the runtime system.
 
-    Class_ Object_class =
+    classes = append_Classes(classes, single_Classes(
             class_(Object,
                    No_class,
                    append_Features(
                            append_Features(
                                    single_Features(method(cool_abort, nil_Formals(), Object, no_expr())),
                                    single_Features(method(type_name, nil_Formals(), Str, no_expr()))),
-                           single_Features(method(copy, nil_Formals(), SELF_TYPE, no_expr()))),
-                   filename);
+                           single_Features(method(copy_, nil_Formals(), SELF_TYPE, no_expr()))),
+                   filename)));
 
     // 
     // The IO class inherits from Object. Its methods are
@@ -166,7 +162,7 @@ void ClassTable::install_basic_classes() {
     //        in_string() : Str                 reads a string from the input
     //        in_int() : Int                      "   an int     "  "     "
     //
-    Class_ IO_class =
+    classes = append_Classes(classes, single_Classes(
             class_(IO,
                    Object,
                    append_Features(
@@ -178,23 +174,23 @@ void ClassTable::install_basic_classes() {
                                                                   SELF_TYPE, no_expr()))),
                                    single_Features(method(in_string, nil_Formals(), Str, no_expr()))),
                            single_Features(method(in_int, nil_Formals(), Int, no_expr()))),
-                   filename);
+                   filename)));
 
     //
     // The Int class has no methods and only a single attribute, the
     // "val" for the integer. 
     //
-    Class_ Int_class =
+    classes = append_Classes(classes, single_Classes(
             class_(Int,
                    Object,
                    single_Features(attr(val, prim_slot, no_expr())),
-                   filename);
+                   filename)));
 
     //
     // Bool also has only the "val" slot.
     //
-    Class_ Bool_class =
-            class_(Bool, Object, single_Features(attr(val, prim_slot, no_expr())), filename);
+    classes = append_Classes(classes, single_Classes(
+            class_(Bool, Object, single_Features(attr(val, prim_slot, no_expr())), filename)));
 
     //
     // The class Str has a number of slots and operations:
@@ -204,7 +200,7 @@ void ClassTable::install_basic_classes() {
     //       concat(arg: Str) : Str               performs string concatenation
     //       substr(arg: Int, arg2: Int): Str     substring selection
     //       
-    Class_ Str_class =
+    classes = append_Classes(classes, single_Classes(
             class_(Str,
                    Object,
                    append_Features(
@@ -223,13 +219,13 @@ void ClassTable::install_basic_classes() {
                                                                  single_Formals(formal(arg2, Int))),
                                                   Str,
                                                   no_expr()))),
-                   filename);
+                   filename)));
 
-    add_class(Object_class);
-    add_class(Bool_class);
-    add_class(Str_class);
-    add_class(Int_class);
-    add_class(IO_class);
+//    add_class(Object_class);
+//    add_class(Bool_class);
+//    add_class(Str_class);
+//    add_class(Int_class);
+//    add_class(IO_class);
 }
 
 
@@ -248,6 +244,7 @@ void ClassTable::install_basic_classes() {
  */
 void program_class::semant() {
     initialize_constants();
+    install_basic_classes();
 
     SemantError semant_error;
 //    InheritanceTableP pInheritanceTable = make_shared<InheritanceTable>(InheritanceTable(pSemantError));
@@ -529,7 +526,7 @@ void TypeChecker::after(let_class *node) {
         type_decl = type_env.current_class->get_name();
     }
     Symbol init_type = node->get_init()->get_type();
-    if (init_type != No_type && type_env.class_table.is_subtype(init_type, type_decl)) {
+    if (init_type != No_type && !type_env.class_table.is_subtype(init_type, type_decl)) {
         semant_error.semant_error(type_env.current_class, node) << "Let initializer type '" << init_type
         << "' should be a subtype of declared type '" << type_decl << "'" << endl;
     }

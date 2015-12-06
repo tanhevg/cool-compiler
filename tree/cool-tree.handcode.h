@@ -53,6 +53,7 @@ virtual void dump_with_types(ostream&, int) = 0;
 #define program_EXTRAS                          \
 void semant();									\
 void traverse_tree(TreeVisitor *visitor);\
+void install_basic_classes();\
 void dump_with_types(ostream&, int);
 
 #define Class__EXTRAS                   \

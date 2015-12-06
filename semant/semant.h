@@ -39,7 +39,6 @@ class ClassTable;
 class ClassTable
 {
 private:
-    void install_basic_classes();
     map<Symbol, Class_> class_by_name;
 
     SemantError& semant_error;
