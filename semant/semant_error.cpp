@@ -32,6 +32,11 @@ ostream& SemantError::semant_error(Symbol filename, tree_node *t)
     return semant_error();
 }
 
+ostream& SemantError::semant_error(Class_ cls, tree_node *t)
+{
+    return semant_error(cls->get_filename(), t);
+}
+
 ostream& SemantError::semant_error()
 {
     semant_errors++;

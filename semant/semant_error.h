@@ -21,6 +21,7 @@ public:
     ostream &semant_error();
     ostream &semant_error(Class_ c);
     ostream &semant_error(Symbol filename, tree_node *t);
+    ostream &semant_error(Class_ cls, tree_node *t);
     void check_errors() const;
 };
 

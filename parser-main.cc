@@ -64,14 +64,16 @@ int main(int argc, char *argv[]) {
         cout << "Writing to file " << out_filename << endl;
         out = stream_ptr(new ofstream(out_filename), default_delete<ostream>());
     }
-    if (ast_root) {
-        ast_root->dump_with_types(*out, 0);
+    if (!ast_root) {
+        cerr << "ast_root is null\n";
+        return 1;
     }
     if (omerrs != 0) {
         cerr << "Compilation halted due to lex and parse errors\n";
         return 1;
     }
     ast_root->semant();
+    ast_root->dump_with_types(*out, 0);
     return 0;
 }
 

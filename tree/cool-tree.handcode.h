@@ -85,7 +85,8 @@ Symbol get_type();
 #define method_EXTRAS	            		            	\
 void traverse_tree(TreeVisitor *visitor);	            	\
 Symbol get_return_type();	                				\
-Symbol get_name();
+Symbol get_name();	            				        	\
+Expression get_body();
 
 
 
@@ -96,16 +97,115 @@ virtual void dump_with_types(ostream&,int) = 0;
 #define formal_EXTRAS                           \
 void traverse_tree(TreeVisitor *visitor);        \
 Symbol get_type();	    		            	\
+Symbol get_name();	    		            	\
 void dump_with_types(ostream&,int);
 
+#define object_EXTRAS	        			    \
+Symbol get_name();	            				\
+void traverse_tree(TreeVisitor *visitor);
 
 #define Case_EXTRAS                             \
+virtual Expression get_expr() = 0;\
+virtual Symbol get_type_decl() = 0;\
 virtual void dump_with_types(ostream& ,int) = 0;
 
 
 #define branch_EXTRAS                                   \
+void traverse_tree(TreeVisitor *visitor);        \
+Symbol get_name();\
+Symbol get_type_decl();\
+Expression get_expr();\
 void dump_with_types(ostream& ,int);
 
+#define assign_EXTRAS                                   \
+void traverse_tree(TreeVisitor *visitor);	            \
+Symbol get_name();  			        		    	\
+Expression get_expr();
+
+#define static_dispatch_EXTRAS                                   \
+Expression get_callee();        			            \
+Expressions get_actuals();      		                \
+Symbol get_name();  			        		    	\
+Symbol get_type_name();  			        		    	\
+void traverse_tree(TreeVisitor *visitor);
+
+#define dispatch_EXTRAS                                   \
+Expression get_callee();        			            \
+Expressions get_actuals();      		                \
+Symbol get_name();  			        		    	\
+void traverse_tree(TreeVisitor *visitor);
+
+#define cond_EXTRAS                                   \
+Expression get_predicate();\
+Expression get_else();\
+Expression get_then();\
+void traverse_tree(TreeVisitor *visitor);
+
+#define loop_EXTRAS                                   \
+Expression get_predicate();\
+Expression get_body();\
+void traverse_tree(TreeVisitor *visitor);
+
+#define typcase_EXTRAS                                   \
+Cases get_cases();\
+void traverse_tree(TreeVisitor *visitor);
+
+#define block_EXTRAS                                   \
+Expressions get_body();\
+void traverse_tree(TreeVisitor *visitor);
+
+#define let_EXTRAS                                   \
+Symbol get_identifier();\
+Symbol get_type_decl();\
+Expression get_init();\
+Expression get_body();\
+void traverse_tree(TreeVisitor *visitor);
+
+#define plus_EXTRAS                                   \
+void traverse_tree(TreeVisitor *visitor);
+
+#define sub_EXTRAS                                   \
+void traverse_tree(TreeVisitor *visitor);
+
+#define mul_EXTRAS                                   \
+void traverse_tree(TreeVisitor *visitor);
+
+#define divide_EXTRAS                                   \
+void traverse_tree(TreeVisitor *visitor);
+
+#define neg_EXTRAS                                   \
+void traverse_tree(TreeVisitor *visitor);
+
+#define lt_EXTRAS                                   \
+void traverse_tree(TreeVisitor *visitor);
+
+#define eq_EXTRAS                                   \
+void traverse_tree(TreeVisitor *visitor);
+
+#define leq_EXTRAS                                   \
+void traverse_tree(TreeVisitor *visitor);
+
+#define comp_EXTRAS                                   \
+void traverse_tree(TreeVisitor *visitor);
+
+#define bool_const_EXTRAS                                   \
+void traverse_tree(TreeVisitor *visitor);
+
+#define string_const_EXTRAS                                   \
+void traverse_tree(TreeVisitor *visitor);
+
+#define int_const_EXTRAS                                   \
+void traverse_tree(TreeVisitor *visitor);
+
+#define new__EXTRAS                                   \
+void traverse_tree(TreeVisitor *visitor);	        \
+Symbol get_type_name();
+
+#define isvoid_EXTRAS                                   \
+void traverse_tree(TreeVisitor *visitor);
+
+#define no_expr_EXTRAS                                   \
+void traverse_tree(TreeVisitor *visitor);
 
 #define Expression_EXTRAS                    \
 Symbol type;                                 \

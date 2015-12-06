@@ -68,14 +68,122 @@ Symbol formal_class::get_type()
    return type_decl;
 }
 
-Symbol method_class::get_return_type() 
-{
-   return return_type;
-}
-Symbol method_class::get_name() 
+Symbol formal_class::get_name()
 {
    return name;
 }
+
+Symbol method_class::get_return_type()
+{
+   return return_type;
+}
+Symbol method_class::get_name()
+{
+   return name;
+}
+Expression method_class::get_body()
+{
+   return expr;
+}
+
+Symbol object_class::get_name()
+{
+   return name;
+}
+
+Expression Unary_Expression_class::get_e1()
+{
+   return e1;
+}
+
+Expression Binary_Expression_class::get_e1()
+{
+   return e1;
+}
+
+Expression Binary_Expression_class::get_e2()
+{
+   return e2;
+}
+
+Expression assign_class::get_expr() {
+   return expr;
+}
+
+Symbol assign_class::get_name() {
+   return name;
+}
+Symbol new__class::get_type_name() {
+   return type_name;
+}
+Expression dispatch_class::get_callee() {
+   return expr;
+}
+Expressions dispatch_class::get_actuals() {
+   return actual;
+}
+Symbol dispatch_class::get_name() {
+   return name;
+}
+
+Expression static_dispatch_class::get_callee() {
+   return expr;
+}
+Expressions static_dispatch_class::get_actuals() {
+   return actual;
+}
+Symbol static_dispatch_class::get_name() {
+   return name;
+}
+Symbol static_dispatch_class::get_type_name() {
+   return type_name;
+}
+Expression cond_class::get_predicate() {
+   return pred;
+}
+Expression cond_class::get_else() {
+   return else_exp;
+}
+Expression cond_class::get_then() {
+   return then_exp;
+}
+Expressions block_class::get_body() {
+   return body;
+}
+
+Symbol let_class::get_identifier() {
+   return identifier;
+}
+Symbol let_class::get_type_decl() {
+   return type_decl;
+}
+Expression let_class::get_init() {
+   return init;
+}
+Expression let_class::get_body() {
+   return body;
+}
+
+Symbol branch_class::get_name() {
+   return name;
+}
+Symbol branch_class::get_type_decl() {
+   return type_decl;
+}
+Expression branch_class::get_expr() {
+   return expr;
+}
+Cases typcase_class::get_cases() {
+   return cases;
+}
+
+Expression loop_class::get_predicate() {
+   return pred;
+}
+Expression loop_class::get_body() {
+   return body;
+}
+
 
 
 

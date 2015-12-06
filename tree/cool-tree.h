@@ -453,12 +453,24 @@ public:
 #endif
 };
 
+class Binary_Expression_class: public Expression_class {
+protected:
+    Expression e1;
+    Expression e2;
+public:
+    Expression get_e1();
+    Expression get_e2();
+};
+
+class Unary_Expression_class: public Expression_class {
+protected:
+    Expression e1;
+public:
+    Expression get_e1();
+};
 
 // define constructor - plus
-class plus_class : public Expression_class {
-protected:
-   Expression e1;
-   Expression e2;
+class plus_class : public Binary_Expression_class {
 public:
    plus_class(Expression a1, Expression a2) {
       e1 = a1;
@@ -477,10 +489,7 @@ public:
 
 
 // define constructor - sub
-class sub_class : public Expression_class {
-protected:
-   Expression e1;
-   Expression e2;
+class sub_class : public Binary_Expression_class {
 public:
    sub_class(Expression a1, Expression a2) {
       e1 = a1;
@@ -499,10 +508,7 @@ public:
 
 
 // define constructor - mul
-class mul_class : public Expression_class {
-protected:
-   Expression e1;
-   Expression e2;
+class mul_class : public Binary_Expression_class {
 public:
    mul_class(Expression a1, Expression a2) {
       e1 = a1;
@@ -521,10 +527,7 @@ public:
 
 
 // define constructor - divide
-class divide_class : public Expression_class {
-protected:
-   Expression e1;
-   Expression e2;
+class divide_class : public Binary_Expression_class {
 public:
    divide_class(Expression a1, Expression a2) {
       e1 = a1;
@@ -543,7 +546,7 @@ public:
 
 
 // define constructor - neg
-class neg_class : public Expression_class {
+class neg_class : public Unary_Expression_class {
 protected:
    Expression e1;
 public:
@@ -563,10 +566,7 @@ public:
 
 
 // define constructor - lt
-class lt_class : public Expression_class {
-protected:
-   Expression e1;
-   Expression e2;
+class lt_class : public Binary_Expression_class {
 public:
    lt_class(Expression a1, Expression a2) {
       e1 = a1;
@@ -585,10 +585,7 @@ public:
 
 
 // define constructor - eq
-class eq_class : public Expression_class {
-protected:
-   Expression e1;
-   Expression e2;
+class eq_class : public Binary_Expression_class {
 public:
    eq_class(Expression a1, Expression a2) {
       e1 = a1;
@@ -607,10 +604,7 @@ public:
 
 
 // define constructor - leq
-class leq_class : public Expression_class {
-protected:
-   Expression e1;
-   Expression e2;
+class leq_class : public Binary_Expression_class {
 public:
    leq_class(Expression a1, Expression a2) {
       e1 = a1;
@@ -629,9 +623,7 @@ public:
 
 
 // define constructor - comp
-class comp_class : public Expression_class {
-protected:
-   Expression e1;
+class comp_class : public Unary_Expression_class {
 public:
    comp_class(Expression a1) {
       e1 = a1;
@@ -729,9 +721,7 @@ public:
 
 
 // define constructor - isvoid
-class isvoid_class : public Expression_class {
-protected:
-   Expression e1;
+class isvoid_class : public Unary_Expression_class {
 public:
    isvoid_class(Expression a1) {
       e1 = a1;
