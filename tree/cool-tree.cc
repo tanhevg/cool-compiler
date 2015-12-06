@@ -63,6 +63,11 @@ Symbol attr_class::get_type()
    return type_decl;
 }
 
+Expression attr_class::get_initializer() 
+{
+   return init;
+}
+
 Symbol formal_class::get_type()
 {
    return type_decl;

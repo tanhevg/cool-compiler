@@ -110,6 +110,9 @@ Symbol ClassTable::join(const vector<Symbol> &types) {
 }
 
 bool ClassTable::is_subtype(Symbol sub, Symbol super) {
+    if (sub == No_type) {
+        return true;
+    }
     Class_ sub_class = get_class(sub);
     do {
         if (sub_class->get_name() == super) {
@@ -220,12 +223,6 @@ void program_class::install_basic_classes() {
                                                   Str,
                                                   no_expr()))),
                    filename)));
-
-//    add_class(Object_class);
-//    add_class(Bool_class);
-//    add_class(Str_class);
-//    add_class(Int_class);
-//    add_class(IO_class);
 }
 
 
@@ -407,6 +404,13 @@ void TypeChecker::after(no_expr_class *node) {
 void TypeChecker::before(method_class *node) {
     type_env.object_env.enterscope();
 }
+void TypeChecker::after(attr_class *node) {
+    if (!type_env.class_table.is_subtype(node->get_initializer()->get_type(), node->get_type())) {
+        semant_error.semant_error(type_env.current_class, node) << "Attribute '" << node->get_name()
+        << "' initialiser type should be a subtipe of the declared type '" << node->get_type()
+        << "'; found '" << node->get_initializer()->get_type() << "'" << endl;
+    }
+}
 void TypeChecker::after(method_class *node) {
     type_env.object_env.exitscope();
     Symbol body_type = node->get_body()->get_type();
@@ -416,7 +420,7 @@ void TypeChecker::after(method_class *node) {
     }
     if (!type_env.class_table.is_subtype(body_type, return_type)) {
         semant_error.semant_error(type_env.current_class, node) << "Method '" << node->get_name()
-        << "' body type should be a subtype of declared return type '" << return_type
+        << "' body type should be a subtype of the declared return type '" << return_type
         << "'; found '" << body_type << "'" << endl;
     }
 }
@@ -526,7 +530,7 @@ void TypeChecker::after(let_class *node) {
         type_decl = type_env.current_class->get_name();
     }
     Symbol init_type = node->get_init()->get_type();
-    if (init_type != No_type && !type_env.class_table.is_subtype(init_type, type_decl)) {
+    if (!type_env.class_table.is_subtype(init_type, type_decl)) {
         semant_error.semant_error(type_env.current_class, node) << "Let initializer type '" << init_type
         << "' should be a subtype of declared type '" << type_decl << "'" << endl;
     }

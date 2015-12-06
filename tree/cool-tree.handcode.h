@@ -80,6 +80,7 @@ void dump_with_types(ostream&,int);
 
 #define attr_EXTRAS	            		            	\
 void traverse_tree(TreeVisitor *visitor);        \
+Expression get_initializer();\
 Symbol get_name();										\
 Symbol get_type();
 

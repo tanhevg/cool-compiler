@@ -188,6 +188,8 @@ public:
     virtual void after(neg_class *node) override;
 
     virtual void after(eq_class *node) override;
+
+    virtual void after(attr_class *node) override;
 };
 
 class MethodResolver : public TreeVisitor
