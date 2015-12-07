@@ -184,6 +184,7 @@ void new__class::traverse_tree(TreeVisitor *visitor) {
 
 void isvoid_class::traverse_tree(TreeVisitor *visitor) {
     visitor->before(this);
+    e1->traverse_tree(visitor);
     visitor->after(this);
 }
 
