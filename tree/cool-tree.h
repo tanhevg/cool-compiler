@@ -546,8 +546,6 @@ public:
 
 // define constructor - neg
 class neg_class : public Unary_Expression_class {
-protected:
-   Expression e1;
 public:
    neg_class(Expression a1) {
       e1 = a1;
