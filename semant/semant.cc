@@ -63,8 +63,11 @@ static void initialize_constants(void) {
     main_meth = idtable.add_string("main");
     //   _no_class is a symbol that can't be the name of any 
     //   user-defined class.
+    // no need to do any specific checking for these symbols because the lexical structure does not permit
+    // symbols starting with underscore
     No_class = idtable.add_string("_No_Class");
     No_type = idtable.add_string("_No_Type");
+
     Object = idtable.add_string("Object");
     out_int = idtable.add_string("out_int");
     out_string = idtable.add_string("out_string");
@@ -92,12 +95,6 @@ void ClassTable::add_class(Class_ cls) {
     Class_ &old_cls = class_by_name[cls->get_name()];
     if (old_cls != nullptr) {
         semant_error.semant_error(cls) << "Duplicate class" << endl;
-        return;
-    }
-    if (cls->get_name() == No_class || cls->get_name() == No_type ||
-            (cls->get_name() != Object && cls->get_parent() == No_class) ||
-            cls->get_parent() == No_type) {
-        semant_error.semant_error(cls) << "Invalid class name/parent" << endl;
         return;
     }
     old_cls = cls;
@@ -283,12 +280,12 @@ void program_class::semant() {
     /* ClassTable constructor may do some semantic analysis */
     ClassTable classtable = ClassTable(classes, semant_error);
 
-    semant_error.check_errors();
+    if (semant_error.check_errors()) return;
 
     InheritanceChecker inheritance_checker = InheritanceChecker(classtable, semant_error);
     traverse_tree(&inheritance_checker);
 
-    semant_error.check_errors();
+    if (semant_error.check_errors()) return;
 
     ObjectEnv object_env;
     MethodEnv method_env(classtable);
@@ -300,12 +297,12 @@ void program_class::semant() {
     MethodChecker method_checker(type_env, semant_error);
     traverse_tree(&method_checker);
 
-    semant_error.check_errors();
+    if (semant_error.check_errors()) return;
 
     TypeChecker type_checker = TypeChecker(type_env, semant_error);
     traverse_tree(&type_checker);
 
-    semant_error.check_errors();
+    if (semant_error.check_errors()) return;
     /* some semantic analysis code may go here */
 
 }

@@ -43,11 +43,11 @@ ostream& SemantError::semant_error()
     return error_stream;
 }
 
-void SemantError::check_errors() const {
+int SemantError::check_errors() const {
     if (semant_errors) {
         cerr << "Compilation halted due to static semantic errors." << endl;
-        exit(1);
     }
+    return semant_errors;
 }
 
 
