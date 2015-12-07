@@ -20,7 +20,7 @@ class A {
     set_var(num : Int, s: String, b:Bool) : SELF_TYPE {
 
 	{
-		let a:Int <- 5*8,  b:String, x:Bool, q:Q<-new Q in
+		let a:Int <- 5*8,  b:String, x:Bool, q:Q<-new Q, z:Z in
 			{ --w
 			    x <- isvoid q;
 				not x;
@@ -28,6 +28,14 @@ class A {
 				b <- q.b();
 				x <- isvoid(b);
 				b.substr(1,2);
+				let z:Z<- if x then new Q else new P fi in {};
+			    z <-
+				case x of
+				    q:P => q <- new P;
+				    p:Q => p <- new Q;
+				   -- a:Int => new Q;
+				   -- b:String => new Object;
+				esac;
 			};
 	    new A;
 	}

@@ -94,6 +94,11 @@ void ClassTable::add_class(Class_ cls) {
         semant_error.semant_error(cls) << "Duplicate class" << endl;
         return;
     }
+    if (cls->get_name() == No_class || cls->get_name() == No_type ||
+            cls->get_parent() == No_class || cls->get_parent() == No_type) {
+        semant_error.semant_error(cls) << "Invalid class name/parent" << endl;
+        return;
+    }
     old_cls = cls;
 }
 
@@ -106,20 +111,45 @@ Symbol ClassTable::get_parent(Symbol class_name) {
 }
 
 Symbol ClassTable::join(const vector<Symbol> &types) {
-    return nullptr;//todo
+    vector<vector<Symbol>> ancestors;
+    for(Symbol s : types) {
+        vector<Symbol> v;
+        Symbol ss = s;
+        while(ss != No_class) {
+            v.insert(v.begin(), ss);
+            ss = get_class(ss)->get_parent();
+        }
+        ancestors.push_back(v);
+    }
+    int i = 0;
+    bool br = false;
+    Symbol ret = nullptr, test;
+    do {
+        test = ancestors[0][i];
+        for(vector<Symbol> v : ancestors) {
+            if (i >= v.size() || v[i] != test) {
+                br = true;
+                break;
+            }
+        }
+        if (!br) {
+            ++i;
+            ret = test;
+        }
+    } while (!br && i < ancestors[0].size());
+    return ret;
 }
 
 bool ClassTable::is_subtype(Symbol sub, Symbol super) {
     if (sub == No_type) {
         return true;
     }
-    Class_ sub_class = get_class(sub);
-    do {
-        if (sub_class->get_name() == super) {
+    while (sub != No_class) {
+        if (sub == super) {
             return true;
         }
-        sub_class = get_class(sub_class->get_parent());
-    } while (sub_class->get_name() != Object);
+        sub = get_class(sub)->get_parent();
+    }
     return false;
 }
 
