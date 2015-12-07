@@ -95,7 +95,8 @@ void ClassTable::add_class(Class_ cls) {
         return;
     }
     if (cls->get_name() == No_class || cls->get_name() == No_type ||
-            cls->get_parent() == No_class || cls->get_parent() == No_type) {
+            (cls->get_name() != Object && cls->get_parent() == No_class) ||
+            cls->get_parent() == No_type) {
         semant_error.semant_error(cls) << "Invalid class name/parent" << endl;
         return;
     }
@@ -119,14 +120,17 @@ Symbol ClassTable::join(const vector<Symbol> &types) {
             v.insert(v.begin(), ss);
             ss = get_class(ss)->get_parent();
         }
-        ancestors.push_back(v);
+        // although vector push_back accepts parameters by reference, it creates copies of values for storing them
+        // use std::move to create an rvalue reference, such that move is performed instead of a copy
+        ancestors.push_back(move(v));
     }
     int i = 0;
     bool br = false;
     Symbol ret = nullptr, test;
+    vector<Symbol>& v0 = ancestors[0];
     do {
-        test = ancestors[0][i];
-        for(vector<Symbol> v : ancestors) {
+        test = v0[i];
+        for(vector<Symbol>& v : ancestors) {
             if (i >= v.size() || v[i] != test) {
                 br = true;
                 break;
@@ -136,7 +140,7 @@ Symbol ClassTable::join(const vector<Symbol> &types) {
             ++i;
             ret = test;
         }
-    } while (!br && i < ancestors[0].size());
+    } while (!br && i < v0.size());
     return ret;
 }
 

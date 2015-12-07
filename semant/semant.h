@@ -19,6 +19,7 @@ using std::pair;
 using std::unique_ptr;
 using std::shared_ptr;
 using std::vector;
+using std::move;
 using std::make_pair;
 using std::make_unique;
 using std::make_shared;

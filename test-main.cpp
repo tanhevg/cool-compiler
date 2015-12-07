@@ -6,6 +6,7 @@
 #include <map>
 #include <utility>
 #include <string>
+#include <vector>
 
 
 using std::endl;
@@ -55,6 +56,16 @@ typedef C* CC;
 
 using namespace std;
 
+class RefTest {
+private:
+    int val;
+public:
+    RefTest(int _val): val(_val) { cout << "Default ctor " << val << endl; }
+    RefTest(const RefTest& _ref_test): val(_ref_test.val) {cout << "Copy ctor" << endl;}
+    RefTest(RefTest&& _ref_test): val(_ref_test.val) {_ref_test.val = 0; cout << "Move ctor" << endl;}
+    int get_val() { return val;}
+};
+
 int main() {
 //    A a;
 //    B b;
@@ -65,9 +76,12 @@ int main() {
 //    a1.test(test);
 //    return 0;
 
-    map<pair<string, string>, pair<CC, CC>> m;
-    m[pair<string, string>("a", "b")] = pair<CC, CC>(new C('A'), new C('B'));
-    cout << m[pair<string, string>("a", "b")].first << endl;
-    cout << (m[pair<string, string>("a", "c")].first == NULL) << endl;
-
+//    map<pair<string, string>, pair<CC, CC>> m;
+//    m[pair<string, string>("a", "b")] = pair<CC, CC>(new C('A'), new C('B'));
+//    cout << m[pair<string, string>("a", "b")].first << endl;
+//    cout << (m[pair<string, string>("a", "c")].first == NULL) << endl;
+    RefTest rt1(42);
+    vector<unique_ptr<RefTest>> v;
+    v.push_back(make_unique<RefTest>(rt1));
+    cout << rt1.get_val() << endl;
 }
