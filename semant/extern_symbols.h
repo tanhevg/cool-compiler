@@ -4,6 +4,7 @@
 
 #ifndef COOL_COMPILER_EXTERN_SYMBOLS_H
 #define COOL_COMPILER_EXTERN_SYMBOLS_H
+
 extern Symbol No_type;
 extern Symbol No_class;
 extern Symbol Bool;

@@ -122,23 +122,23 @@ void TypeChecker::after(formal_class *node) {
     }
 }
 
-void TypeChecker::check_formals(tree_node *node, Symbol name, Symbol callee_type, vector<Symbol> *formals, Expressions actuals) {
-    if (formals->size() != actuals->len()) {
-        semant_error.semant_error(type_env.current_class, node) << "Mehtod '" << callee_type << "." << name
-        <<"' formal parameter count (" << formals->size()
+void TypeChecker::check_formals(tree_node *node, Symbol name, Symbol callee_type, const vector<Symbol> &formals, Expressions actuals) {
+    if (formals.size() != actuals->len()) {
+        semant_error.semant_error(type_env.current_class, node) << "Method '" << callee_type << "." << name
+        <<"' formal parameter count (" << formals.size()
         << ") does not match actual parameter count (" << actuals->len() << ")" << endl;
     }
     for(int i = actuals->first(); actuals->more(i); i = actuals->next(i)) {
         Expression actual = actuals->nth(i);
-        if (i == formals->size()) {
+        if (i == formals.size()) {
             break;
         }
-        Symbol formal = formals->at(i);
+        Symbol formal = formals[i];
         if (formal == SELF_TYPE) {
             formal = callee_type;
         }
         if (!type_env.class_table.is_subtype(actual->get_type(), formal)) {
-            semant_error.semant_error(type_env.current_class, node) << "Mehtod '" << callee_type << "." << name
+            semant_error.semant_error(type_env.current_class, node) << "Method '" << callee_type << "." << name
             << "' parameter #" << i << " type mismatch. Actual: '"
             << actual->get_type() << "' should be a subtype of '" << formal << "'" << endl;
         }
@@ -148,18 +148,18 @@ void TypeChecker::check_formals(tree_node *node, Symbol name, Symbol callee_type
 
 void TypeChecker::after(dispatch_class *node) {
     Symbol callee_type = node->get_callee()->get_type();
-    pair<Symbol, vector<Symbol> *> method_signature = type_env.method_env.get_method(callee_type, node->get_name());
-    Symbol return_type = method_signature.first;
-    if (return_type == nullptr) {
+    MethodSignatureP method_signature = type_env.method_env.get_method(callee_type, node->get_name());
+    if (!method_signature) {
         semant_error.semant_error(type_env.current_class, node) << "No such method: '"
         << callee_type << "." << node->get_name() << "'" << endl;
         return;
     }
+    Symbol return_type = method_signature->get_return_type();
     if (return_type == SELF_TYPE) {
         return_type = callee_type;
     }
     Expressions actuals = node->get_actuals();
-    vector<Symbol> *formals = method_signature.second;
+    const vector<Symbol> &formals = method_signature->get_parameter_types();
     check_formals(node, node->get_name(), callee_type, formals, actuals);
     node->set_type(return_type);
 }
@@ -170,18 +170,18 @@ void TypeChecker::after(static_dispatch_class *node) {
         semant_error.semant_error(type_env.current_class, node) << "Callee type '" << callee_type
         << "' is not a subtype of '" << node->get_type_name() << "'" << endl;
     }
-    pair<Symbol, vector<Symbol> *> method_signature = type_env.method_env.get_method(node->get_type_name(), node->get_name());
-    Symbol return_type = method_signature.first;
-    if (return_type == nullptr) {
+    MethodSignatureP method_signature = type_env.method_env.get_method(node->get_type_name(), node->get_name());
+    if (!method_signature) {
         semant_error.semant_error(type_env.current_class, node) << "No such method: '"
         << callee_type << "." << node->get_name() << "'" << endl;
         return;
     }
+    Symbol return_type = method_signature->get_return_type();
     if (return_type == SELF_TYPE) {
         return_type = callee_type;
     }
     Expressions actuals = node->get_actuals();
-    vector<Symbol> *formals = method_signature.second;
+    const vector<Symbol>& formals = method_signature->get_parameter_types();
     check_formals(node, node->get_name(), callee_type, formals, actuals);
     node->set_type(return_type);
 }

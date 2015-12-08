@@ -5,11 +5,9 @@
 #ifndef COOL_COMPILER_SEMANT_ERROR_H
 #define COOL_COMPILER_SEMANT_ERROR_H
 #include <iostream>
-#include <memory>
 #include "cool-tree.h"
 #include "stringtab.h"
 
-using std::shared_ptr;
 
 class SemantError {
 private:
@@ -25,7 +23,6 @@ public:
     int check_errors() const;
 };
 
-typedef shared_ptr<SemantError> SemantErrorP;
 
 
 #endif //COOL_COMPILER_SEMANT_ERROR_H

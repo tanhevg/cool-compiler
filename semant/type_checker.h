@@ -15,7 +15,7 @@ class TypeChecker: public TreeVisitor
     SemantError& semant_error;
     AttributeResolver attribute_resolver;
     void check_arith_type(Binary_Expression_class *node);
-    void check_formals(tree_node *node, Symbol name, Symbol callee_type, vector<Symbol> *formals, Expressions actuals);
+    void check_formals(tree_node *node, Symbol name, Symbol callee_type, const vector<Symbol> &formals, Expressions actuals);
     void check_comparison(Binary_Expression_class *node);
 public:
     TypeChecker(TypeEnv &_type_env, SemantError& _semant_error):

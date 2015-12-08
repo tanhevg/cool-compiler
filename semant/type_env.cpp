@@ -2,6 +2,7 @@
 // Created by Evgeny Tanhilevich on 07/12/2015.
 //
 
+#include <utility>
 #include "type_env.h"
 #include "extern_symbols.h"
 
@@ -123,42 +124,37 @@ void AttributeResolver::before(attr_class *node) {
 }
 
 
-void MethodEnv::add_method(Symbol call_site_type, Symbol method_name, Symbol return_type,
-                           vector<Symbol> *argument_types) {
-    methods[pair<Symbol, Symbol>(call_site_type, method_name)] = pair<Symbol, vector<Symbol>*>(return_type,
-                                                                                               argument_types);
+void MethodEnv::add_method(MethodSignatureP method_signature) {
+    methods[pair<Symbol, Symbol>(method_signature->get_declaring_class(), method_signature->get_name())] =
+            method_signature;
 }
 
-pair<Symbol, vector<Symbol> *> MethodEnv::get_method_no_parents(Symbol call_site_type, Symbol method_name) {
+MethodSignatureP MethodEnv::get_method_no_parents(Symbol call_site_type, Symbol method_name) {
     return methods[pair<Symbol, Symbol>(call_site_type, method_name)];
 }
 
-pair<Symbol, vector<Symbol> *> MethodEnv::get_method(Symbol call_site_type, Symbol method_name) {
-    pair<Symbol, vector<Symbol> *> ret = methods[pair<Symbol, Symbol>(call_site_type, method_name)];
-    if (ret.first != nullptr) {
-        return ret;
-    }
-    Symbol parent_name = class_table.get_class(call_site_type)->get_parent();
-    while(ret.first == nullptr && parent_name != No_class) {
-        ret = methods[pair<Symbol, Symbol>(parent_name, method_name)];
-        if (ret.first != nullptr) {
+MethodSignatureP MethodEnv::get_method(Symbol call_site_type, Symbol method_name) {
+    while(call_site_type != No_class) {
+        MethodSignatureP ret = methods[pair<Symbol, Symbol>(call_site_type, method_name)];
+        if (ret) {
             return ret;
         }
-        parent_name = class_table.get_parent(parent_name);
+        call_site_type = class_table.get_parent(call_site_type);
     }
-    return pair<Symbol, vector<Symbol> *>(nullptr, nullptr);
+    return nullptr;
 }
 
 void MethodResolver::before(method_class *node) {
-    formal_types = new vector<Symbol>(0);
+    formal_types = vector<Symbol>();
 }
 
 void MethodResolver::after(method_class *node) {
-    type_env.method_env.add_method(class_name, node->get_name(), node->get_return_type(), formal_types);
+    type_env.method_env.add_method(make_shared<MethodSignature>(
+            MethodSignature(class_name, node->get_name(), node->get_return_type(), move(formal_types))));
 }
 
 void MethodResolver::after(formal_class *node) {
-    formal_types->push_back(node->get_type());
+    formal_types.push_back(node->get_type());
 }
 
 void MethodResolver::before(class__class *node) {
@@ -173,22 +169,22 @@ void MethodChecker::before(method_class *node) {
     Class_ cls = type_env.class_table.get_class(class_name);
     Symbol parent = cls->get_parent();
     Symbol method_name = node->get_name();
-    pair<Symbol, vector<Symbol>*> signature = type_env.method_env.get_method_no_parents(class_name, method_name);
+    MethodSignatureP signature = type_env.method_env.get_method_no_parents(class_name, method_name);
     while (parent != No_class) {
-        pair<Symbol, vector<Symbol> *> parent_signature = type_env.method_env.get_method_no_parents(parent, method_name);
-        if (parent_signature.first != nullptr) {
+        MethodSignatureP parent_signature = type_env.method_env.get_method_no_parents(parent, method_name);
+        if (parent_signature) {
             bool same_signature = true;
-            same_signature &= parent_signature.first == signature.first;
-            same_signature &= parent_signature.second->size() == signature.second->size();
+            same_signature &= parent_signature->get_return_type() == signature->get_return_type();
+            same_signature &= parent_signature->get_parameter_types().size() == signature->get_parameter_types().size();
             if (same_signature) {
-                for (unsigned long i = 0; i < signature.second->size(); ++i) {
-                    same_signature &= parent_signature.second->at(i) == signature.second->at(i);
+                for (unsigned long i = 0; i < signature->get_parameter_types().size(); ++i) {
+                    same_signature &= parent_signature->get_parameter_types()[i] == signature->get_parameter_types()[i];
                 }
             }
             if (!same_signature) {
                 semant_error.semant_error(cls->get_filename(), node)
                 << "Method '" << method_name << "' in class " << class_name
-                << " overrides another method with same name and different signature from class " << parent << endl;
+                << " overrides another method with the same name and different signature from class " << parent << endl;
             }
         }
         parent = type_env.class_table.get_parent(parent);

@@ -7,6 +7,7 @@
 
 #include <map>
 #include <vector>
+#include <memory>
 #include "stringtab.h"
 #include "semant_error.h"
 #include "symtab.h"
@@ -15,6 +16,9 @@
 using std::map;
 using std::pair;
 using std::vector;
+using std::move;
+using std::shared_ptr;
+using std::make_shared;
 
 class ClassTable
 {
@@ -35,19 +39,55 @@ public:
 
 typedef SymbolTable<Symbol, Entry> ObjectEnv;
 
+class MethodSignature {
+private:
+    Symbol declaring_class;
+    Symbol return_type;
+    Symbol name;
+    vector<Symbol> parameter_types;
+public:
+    MethodSignature(Symbol _declaring_class, Symbol _name, Symbol _return_type, vector<Symbol>&& _parameter_types):
+            declaring_class(_declaring_class), name(_name), return_type(_return_type), parameter_types(_parameter_types)
+    {}
+    MethodSignature():
+            declaring_class(nullptr), name(nullptr), return_type(nullptr), parameter_types()
+    {}
+    MethodSignature(MethodSignature&&other) :
+        declaring_class(other.declaring_class),
+        return_type(other.return_type),
+        name(other.name),
+        parameter_types(move(other.parameter_types))
+    {
+        //_method_signature.parameter_types
+    }
+    MethodSignature& operator=(MethodSignature&& other) {
+        declaring_class = other.declaring_class;
+        return_type = other.return_type;
+        name = other.name;
+        parameter_types = move(other.parameter_types);
+        return *this;
+    }
+    Symbol get_declaring_class() {return declaring_class; }
+    Symbol get_return_type() {return return_type;}
+    Symbol get_name() {return name;}
+    const vector<Symbol>& get_parameter_types() {return parameter_types;}
+
+};
+
+using MethodSignatureP = shared_ptr<MethodSignature>;
 
 class MethodEnv
 {
     ClassTable& class_table;
-    map<pair<Symbol, Symbol>, pair<Symbol, vector<Symbol>*>> methods;
+    map<pair<Symbol, Symbol>, MethodSignatureP> methods;
 public:
     MethodEnv(ClassTable& _class_table):
             class_table(_class_table),
-            methods(map<pair<Symbol, Symbol>, pair<Symbol, vector<Symbol>*>>())
+            methods(map<pair<Symbol, Symbol>, MethodSignatureP>())
     {}
-    pair<Symbol, vector<Symbol>*> get_method_no_parents(Symbol call_site_type, Symbol method_name);
-    pair<Symbol, vector<Symbol>*> get_method(Symbol call_site_type, Symbol method_name);
-    void add_method(Symbol call_site_type, Symbol method_name, Symbol return_type, vector<Symbol>* argument_types);
+    MethodSignatureP get_method_no_parents(Symbol call_site_type, Symbol method_name);
+    MethodSignatureP get_method(Symbol call_site_type, Symbol method_name);
+    void add_method(MethodSignatureP method_signature);
 };
 
 struct TypeEnv {
@@ -95,12 +135,12 @@ public:
 class MethodResolver : public TreeVisitor
 {
     TypeEnv& type_env;
-    vector<Symbol> *formal_types;
+    vector<Symbol> formal_types;
     Symbol class_name;
 public:
     MethodResolver(TypeEnv& _type_env) :
             type_env(_type_env),
-            formal_types(nullptr)
+            formal_types()
     {}
 
 
