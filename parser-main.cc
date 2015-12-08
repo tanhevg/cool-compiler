@@ -72,8 +72,8 @@ int main(int argc, char *argv[]) {
         cerr << "Compilation halted due to lex and parse errors\n";
         return 1;
     }
-    ast_root->semant();
+    int ret = ast_root->semant();
     ast_root->dump_with_types(*out, 0);
-    return 0;
+    return ret;
 }
 

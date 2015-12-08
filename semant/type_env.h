@@ -19,6 +19,7 @@ using std::vector;
 using std::move;
 using std::shared_ptr;
 using std::make_shared;
+using std::make_pair;
 
 class ClassTable
 {
@@ -58,36 +59,35 @@ public:
         name(other.name),
         parameter_types(move(other.parameter_types))
     {
-        //_method_signature.parameter_types
+        other.parameter_types = vector<Symbol>();
     }
     MethodSignature& operator=(MethodSignature&& other) {
         declaring_class = other.declaring_class;
         return_type = other.return_type;
         name = other.name;
         parameter_types = move(other.parameter_types);
+        other.parameter_types = vector<Symbol>();
         return *this;
     }
-    Symbol get_declaring_class() {return declaring_class; }
-    Symbol get_return_type() {return return_type;}
-    Symbol get_name() {return name;}
-    const vector<Symbol>& get_parameter_types() {return parameter_types;}
+    Symbol get_declaring_class() const {return declaring_class; }
+    Symbol get_return_type() const {return return_type;}
+    Symbol get_name() const {return name;}
+    const vector<Symbol>& get_parameter_types() const {return parameter_types;}
 
 };
-
-using MethodSignatureP = shared_ptr<MethodSignature>;
 
 class MethodEnv
 {
     ClassTable& class_table;
-    map<pair<Symbol, Symbol>, MethodSignatureP> methods;
+    map<pair<Symbol, Symbol>, MethodSignature> methods;
 public:
     MethodEnv(ClassTable& _class_table):
             class_table(_class_table),
-            methods(map<pair<Symbol, Symbol>, MethodSignatureP>())
+            methods(map<pair<Symbol, Symbol>, MethodSignature>())
     {}
-    MethodSignatureP get_method_no_parents(Symbol call_site_type, Symbol method_name);
-    MethodSignatureP get_method(Symbol call_site_type, Symbol method_name);
-    void add_method(MethodSignatureP method_signature);
+    const MethodSignature& get_method_no_parents(Symbol call_site_type, Symbol method_name);
+    const MethodSignature& get_method(Symbol call_site_type, Symbol method_name);
+    void add_method(Symbol class_name, Symbol method_name, Symbol return_type, vector<Symbol> formal_parameter_types);
 };
 
 struct TypeEnv {

@@ -148,18 +148,18 @@ void TypeChecker::check_formals(tree_node *node, Symbol name, Symbol callee_type
 
 void TypeChecker::after(dispatch_class *node) {
     Symbol callee_type = node->get_callee()->get_type();
-    MethodSignatureP method_signature = type_env.method_env.get_method(callee_type, node->get_name());
-    if (!method_signature) {
+    const MethodSignature& method_signature = type_env.method_env.get_method(callee_type, node->get_name());
+    if (!method_signature.get_name()) {
         semant_error.semant_error(type_env.current_class, node) << "No such method: '"
         << callee_type << "." << node->get_name() << "'" << endl;
         return;
     }
-    Symbol return_type = method_signature->get_return_type();
+    Symbol return_type = method_signature.get_return_type();
     if (return_type == SELF_TYPE) {
         return_type = callee_type;
     }
     Expressions actuals = node->get_actuals();
-    const vector<Symbol> &formals = method_signature->get_parameter_types();
+    const vector<Symbol> &formals = method_signature.get_parameter_types();
     check_formals(node, node->get_name(), callee_type, formals, actuals);
     node->set_type(return_type);
 }
@@ -170,18 +170,18 @@ void TypeChecker::after(static_dispatch_class *node) {
         semant_error.semant_error(type_env.current_class, node) << "Callee type '" << callee_type
         << "' is not a subtype of '" << node->get_type_name() << "'" << endl;
     }
-    MethodSignatureP method_signature = type_env.method_env.get_method(node->get_type_name(), node->get_name());
-    if (!method_signature) {
+    const MethodSignature& method_signature = type_env.method_env.get_method(node->get_type_name(), node->get_name());
+    if (!method_signature.get_name()) {
         semant_error.semant_error(type_env.current_class, node) << "No such method: '"
         << callee_type << "." << node->get_name() << "'" << endl;
         return;
     }
-    Symbol return_type = method_signature->get_return_type();
+    Symbol return_type = method_signature.get_return_type();
     if (return_type == SELF_TYPE) {
         return_type = callee_type;
     }
     Expressions actuals = node->get_actuals();
-    const vector<Symbol>& formals = method_signature->get_parameter_types();
+    const vector<Symbol>& formals = method_signature.get_parameter_types();
     check_formals(node, node->get_name(), callee_type, formals, actuals);
     node->set_type(return_type);
 }

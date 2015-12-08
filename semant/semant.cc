@@ -197,7 +197,7 @@ void program_class::install_basic_classes() {
      errors. Part 2) can be done in a second stage, when you want
      to build mycoolc.
  */
-void program_class::semant() {
+int program_class::semant() {
     initialize_constants();
     install_basic_classes();
 
@@ -205,12 +205,12 @@ void program_class::semant() {
 
     ClassTable classtable = ClassTable(classes, semant_error);
 
-    if (semant_error.check_errors()) return;
+    if (semant_error.check_errors()) return 1;
 
     InheritanceChecker inheritance_checker = InheritanceChecker(classtable, semant_error);
     traverse_tree(&inheritance_checker);
 
-    if (semant_error.check_errors()) return;
+    if (semant_error.check_errors()) return 1;
 
     ObjectEnv object_env;
     MethodEnv method_env(classtable);
@@ -222,14 +222,14 @@ void program_class::semant() {
     MethodChecker method_checker(type_env, semant_error);
     traverse_tree(&method_checker);
 
-    if (semant_error.check_errors()) return;
+    if (semant_error.check_errors()) return 1;
 
     TypeChecker type_checker = TypeChecker(type_env, semant_error);
     traverse_tree(&type_checker);
 
-    if (semant_error.check_errors()) return;
+    if (semant_error.check_errors()) return 1;
     /* some semantic analysis code may go here */
-
+    return 0;
 }
 
 
