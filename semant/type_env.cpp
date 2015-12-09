@@ -88,9 +88,6 @@ InheritanceChecker::InheritanceChecker(ClassTable &_class_table, SemantError &_s
 }
 
 void InheritanceChecker::before(class__class *node) {
-    if (node->get_name() == Object) {
-        return;
-    }
     for (Symbol s:no_inheritance) {
         if (node->get_parent() == s) {
             semant_error.semant_error(node) << "Inheritance from '" << s << "' is not allowed" << endl;
@@ -98,11 +95,20 @@ void InheritanceChecker::before(class__class *node) {
         }
     }
     Class_ parent = node;
-    while (parent->get_name() != Object) {
-        parent = class_table.get_class(parent->get_parent());
-        if (parent->get_name() == node->get_name()) {
-            semant_error.semant_error(node) << "Cyclic inheritance" << endl;
+    map<Symbol, int> visit_count;
+    Symbol parent_name = parent->get_name();
+    while (parent_name != Object) {
+        parent_name = parent->get_parent();
+        parent = class_table.get_class(parent_name);
+        if (!parent) {
+            semant_error.semant_error(node) << "Parent class '" << parent_name << "' is not declared" << endl;
             break;
+        }
+        if (visit_count[parent_name] > 0) {
+            semant_error.semant_error(parent) << "Cyclic inheritance" << endl;
+            break;
+        } else {
+            ++visit_count[parent_name];
         }
     }
 };

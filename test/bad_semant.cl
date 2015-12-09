@@ -13,10 +13,15 @@ class C inherits B {
 class D inherits C {
     init():Object {}; -- Method 'init' in class D overrides another method with same name and different signature from class C
 };
+class A inherits B{};
+class S inherits String {};
 *)
 
-class A {};
+
+class A{};
 class B inherits A{};
+
+
 
 Class Main {
 	main():C {{
