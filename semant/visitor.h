@@ -14,16 +14,12 @@ public:
     virtual void before(class__class* node)  {};
     virtual void after(class__class* node)  {};
 
-    virtual void before(program_class* node)  {};
-    virtual void after(program_class* node)  {};
-
     virtual void before(method_class* node)  {};
     virtual void after(method_class* node)  {};
 
     virtual void before(attr_class* node)  {};
     virtual void after(attr_class* node)  {};
 
-    virtual void before(formal_class* node)  {};
     virtual void after(formal_class* node)  {};
 
     virtual void after(int_const_class* node)  {};

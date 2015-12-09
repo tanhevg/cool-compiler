@@ -35,13 +35,18 @@ void TypeChecker::after(object_class* node)  {
 };
 
 void TypeChecker::check_arith_type(Binary_Expression_class *node) {
-    if (node->get_e1()->get_type() != Int) {
-        semant_error.semant_error(type_env.current_class, node->get_e1()) << "Invalid arithmetic expression argument type : '"
-        << node->get_e1()->get_type() << "'; expecting 'Int'"  << endl;
+    Symbol e1_type = node->get_e1()->get_type();
+    Symbol e2_type = node->get_e2()->get_type();
+    if (!e1_type || !e2_type) {
+        return;
     }
-    if (node->get_e2()->get_type() != Int) {
+    if (e1_type != Int) {
+        semant_error.semant_error(type_env.current_class, node->get_e1()) << "Invalid arithmetic expression argument type : '"
+        << e1_type << "'; expecting 'Int'" << endl;
+    }
+    if (e2_type != Int) {
         semant_error.semant_error(type_env.current_class, node->get_e2()) << "Invalid arithmetic expression argument type : '"
-        << node->get_e2()->get_type() << "'; expecting 'Int'"  << endl;
+        << e2_type << "'; expecting 'Int'" << endl;
     }
     node->set_type(Int);
 }
@@ -64,10 +69,14 @@ void TypeChecker::after(sub_class* node)  {
 
 void TypeChecker::after(assign_class* node)  {
     Symbol declared_type = type_env.object_env.lookup(node->get_name());
-    if (declared_type == nullptr) {
+    if (!declared_type) {
         semant_error.semant_error(type_env.current_class, node) << "'" << node->get_name() << "' is not declared" << endl;
+        return;
     }
     Symbol expr_type = node->get_expr()->get_type();
+    if (!expr_type) {
+        return;
+    }
     if (!type_env.class_table.is_subtype(expr_type, declared_type)) {
         semant_error.semant_error(type_env.current_class, node->get_expr()) << "Expression type is '" << expr_type
         << "' should be a subtype of '" << declared_type << "'" << endl;
@@ -91,15 +100,22 @@ void TypeChecker::before(method_class *node) {
     type_env.object_env.enterscope();
 }
 void TypeChecker::after(attr_class *node) {
-    if (!type_env.class_table.is_subtype(node->get_initializer()->get_type(), node->get_type())) {
+    Symbol init_type = node->get_initializer()->get_type();
+    if (init_type) {
+        return;
+    }
+    if (!type_env.class_table.is_subtype(init_type, node->get_type())) {
         semant_error.semant_error(type_env.current_class, node) << "Attribute '" << node->get_name()
         << "' initialiser type should be a subtipe of the declared type '" << node->get_type()
-        << "'; found '" << node->get_initializer()->get_type() << "'" << endl;
+        << "'; found '" << init_type << "'" << endl;
     }
 }
 void TypeChecker::after(method_class *node) {
     type_env.object_env.exitscope();
     Symbol body_type = node->get_body()->get_type();
+    if (!body_type) {
+        return;
+    }
     Symbol return_type = node->get_return_type();
     if (return_type == SELF_TYPE) {
         return_type = type_env.current_class->get_name();
@@ -130,7 +146,7 @@ void TypeChecker::check_formals(tree_node *node, Symbol name, Symbol callee_type
     }
     for(int i = actuals->first(); actuals->more(i); i = actuals->next(i)) {
         Expression actual = actuals->nth(i);
-        if (i == formals.size()) {
+        if (i == formals.size() || !actual->get_type()) {
             break;
         }
         Symbol formal = formals[i];
@@ -148,6 +164,9 @@ void TypeChecker::check_formals(tree_node *node, Symbol name, Symbol callee_type
 
 void TypeChecker::after(dispatch_class *node) {
     Symbol callee_type = node->get_callee()->get_type();
+    if (!callee_type) {
+        return;
+    }
     const MethodSignature& method_signature = type_env.method_env.get_method(callee_type, node->get_name());
     if (!method_signature.get_name()) {
         semant_error.semant_error(type_env.current_class, node) << "No such method: '"
@@ -166,6 +185,9 @@ void TypeChecker::after(dispatch_class *node) {
 
 void TypeChecker::after(static_dispatch_class *node) {
     Symbol callee_type = node->get_callee()->get_type();
+    if (!callee_type) {
+        return;
+    }
     if (!type_env.class_table.is_subtype(callee_type, node->get_type_name())) {
         semant_error.semant_error(type_env.current_class, node) << "Callee type '" << callee_type
         << "' is not a subtype of '" << node->get_type_name() << "'" << endl;
@@ -187,18 +209,28 @@ void TypeChecker::after(static_dispatch_class *node) {
 }
 
 void TypeChecker::after(cond_class *node) {
-    if (node->get_predicate()->get_type() != Bool) {
+    Symbol pred_type = node->get_predicate()->get_type();
+    Symbol then_type = node->get_then()->get_type();
+    Symbol else_type = node->get_else()->get_type();
+    if (!pred_type || !then_type || !else_type) {
+        return;
+    }
+    if (pred_type != Bool) {
         semant_error.semant_error(type_env.current_class, node) << "Predicate should be of type 'Bool'" << endl;
     }
     vector<Symbol> branch_types;
-    branch_types.push_back(node->get_then()->get_type());
-    branch_types.push_back(node->get_else()->get_type());
+    branch_types.push_back(then_type);
+    branch_types.push_back(else_type);
     node->set_type(type_env.class_table.join(branch_types));
 }
 
 void TypeChecker::after(block_class *node) {
     Expressions body = node->get_body();
-    node->set_type(body->nth(body->len() - 1)->get_type());
+    Symbol last_body_type = body->nth(body->len() - 1)->get_type();
+    if (!last_body_type) {
+        return;
+    }
+    node->set_type(last_body_type);
 }
 
 void TypeChecker::before(let_class *node) {
@@ -216,11 +248,15 @@ void TypeChecker::after(let_class *node) {
         type_decl = type_env.current_class->get_name();
     }
     Symbol init_type = node->get_init()->get_type();
+    Symbol body_type = node->get_body()->get_type();
+    if (!init_type || !body_type) {
+        return;
+    }
     if (!type_env.class_table.is_subtype(init_type, type_decl)) {
         semant_error.semant_error(type_env.current_class, node) << "Let initializer type '" << init_type
         << "' should be a subtype of declared type '" << type_decl << "'" << endl;
     }
-    node->set_type(node->get_body()->get_type());
+    node->set_type(body_type);
 }
 void TypeChecker::before(branch_class *node) {
     type_env.object_env.enterscope();
@@ -242,15 +278,23 @@ void TypeChecker::after(typcase_class *node) {
         } else {
             branch_declared_types[declared_type] = 1;
         }
-        branch_expression_types.push_back(case_->get_expr()->get_type());
+        Symbol case_expr_type = case_->get_expr()->get_type();
+        if (!case_expr_type) {
+            return;
+        }
+        branch_expression_types.push_back(case_expr_type);
     }
     node->set_type(type_env.class_table.join(branch_expression_types));
 }
 
 void TypeChecker::after(loop_class *node) {
-    if (node->get_predicate()->get_type() != Bool) {
+    Symbol predicate_type = node->get_predicate()->get_type();
+    if (!predicate_type) {
+        return;
+    }
+    if (predicate_type != Bool) {
         semant_error.semant_error(type_env.current_class, node) << "Invalid predicate type: '"
-        << node->get_predicate()->get_type() << "'; expecting 'Bool'" << endl;
+        << predicate_type << "'; expecting 'Bool'" << endl;
     }
     node->set_type(Object);
 }
@@ -260,21 +304,30 @@ void TypeChecker::after(isvoid_class *node) {
 }
 
 void TypeChecker::after(comp_class *node) {
-    if (node->get_e1()->get_type() != Bool) {
+    Symbol e1type = node->get_e1()->get_type();
+    if (!e1type) {
+        return;
+    }
+    if (e1type != Bool) {
         semant_error.semant_error(type_env.current_class, node->get_e1()) << "Invalid argument type: '"
-        << node->get_e1()->get_type() << "'; expecting 'Bool'" << endl;
+        << e1type << "'; expecting 'Bool'" << endl;
     }
     node->set_type(Bool);
 }
 
 void TypeChecker::check_comparison(Binary_Expression_class *node) {
-    if (node->get_e1()->get_type() != Int) {
-        semant_error.semant_error(type_env.current_class, node->get_e1()) << "Invalid comparison argument type: '"
-        << node->get_e1()->get_type() << "'; expecting 'Int'" << endl;
+    Symbol e1_type = node->get_e1()->get_type();
+    Symbol e2_type = node->get_e2()->get_type();
+    if (!e1_type || !e2_type) {
+        return;
     }
-    if (node->get_e2()->get_type() != Int) {
+    if (e1_type != Int) {
+        semant_error.semant_error(type_env.current_class, node->get_e1()) << "Invalid comparison argument type: '"
+        << e1_type << "'; expecting 'Int'" << endl;
+    }
+    if (e2_type != Int) {
         semant_error.semant_error(type_env.current_class, node->get_e2()) << "Invalid comparison argument type: '"
-        << node->get_e2()->get_type() << "'; expecting 'Int'" << endl;
+        << e2_type << "'; expecting 'Int'" << endl;
     }
     node->set_type(Bool);
 }
@@ -286,9 +339,13 @@ void TypeChecker::after(leq_class *node) {
     check_comparison(node);
 }
 void TypeChecker::after(neg_class *node) {
-    if (node->get_e1()->get_type() != Int) {
+    Symbol e1_type = node->get_e1()->get_type();
+    if (!e1_type) {
+        return;
+    }
+    if (e1_type != Int) {
         semant_error.semant_error(type_env.current_class, node->get_e1()) << "Invalid unary minus argument type: '"
-        << node->get_e1()->get_type() << "'; expecting 'Int'" << endl;
+        << e1_type << "'; expecting 'Int'" << endl;
     }
     node->set_type(Int);
 }
@@ -296,6 +353,9 @@ void TypeChecker::after(neg_class *node) {
 void TypeChecker::after(eq_class *node) {
     Symbol type1 = node->get_e1()->get_type();
     Symbol type2 = node->get_e2()->get_type();
+    if (!type1 || !type2) {
+        return;
+    }
     if ((type1 == Int || type1 == Str || type1 == Bool ||
             type2 == Int || type2 == Str || type2 == Bool) &&
         type1 != type2) {
