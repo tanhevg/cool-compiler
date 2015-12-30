@@ -1,0 +1,6 @@
+include_directories("${PROJECT_SOURCE_DIR}/tree")
+include_directories("${PROJECT_SOURCE_DIR}/cooldist")
+include_directories("${PROJECT_SOURCE_DIR}/semant")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+add_compile_options(-Wno-write-strings)
+add_library(cgen cgen.cc cgen_supp.cc)

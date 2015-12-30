@@ -46,12 +46,14 @@ typedef Cases_class *Cases;
 
 #define Program_EXTRAS                          \
 virtual int semant() = 0;						\
+virtual void cgen(ostream &os) = 0;     	    \
 virtual void dump_with_types(ostream&, int) = 0;
 
 
 
 #define program_EXTRAS                          \
 int semant();									\
+void cgen(ostream &os);     			        \
 void traverse_tree(TreeVisitor *visitor);\
 void install_basic_classes();\
 void dump_with_types(ostream&, int);
@@ -220,7 +222,8 @@ Expression_class() { type = (Symbol) NULL; }
 
 
 #define Expression_SHARED_EXTRAS           \
-void dump_with_types(ostream&,int); 
+void code(ostream &s); 	    		        \
+void dump_with_types(ostream&,int);
 
 
 #endif

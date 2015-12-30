@@ -74,6 +74,9 @@ int main(int argc, char *argv[]) {
     }
     int ret = ast_root->semant();
     ast_root->dump_with_types(*out, 0);
-    return ret;
+    if (ret) {
+        return ret;
+    }
+    ast_root->cgen(cout);
 }
 
