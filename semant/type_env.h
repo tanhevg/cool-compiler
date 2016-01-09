@@ -12,6 +12,7 @@
 #include "semant_error.h"
 #include "symtab.h"
 #include "visitor.h"
+#include "ClassTable.h"
 
 using std::map;
 using std::pair;
@@ -21,22 +22,7 @@ using std::shared_ptr;
 using std::make_shared;
 using std::make_pair;
 
-class ClassTable
-{
-private:
-    map<Symbol, Class_> class_by_name;
 
-    SemantError& semant_error;
-
-public:
-    ClassTable(Classes, SemantError&);
-    void add_class(Class_);
-    Class_ get_class(Symbol s);
-    Symbol get_parent(Symbol class_name);
-    bool is_subtype(Symbol sub, Symbol super);
-
-    Symbol join(const vector<Symbol> &type1);
-};
 
 typedef SymbolTable<Symbol, Entry> ObjectEnv;
 

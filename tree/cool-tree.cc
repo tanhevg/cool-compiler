@@ -10,6 +10,7 @@
 #include "tree.h"
 #include "cool-tree.handcode.h"
 #include "cool-tree.h"
+#include "ClassTable.h"
 
 
 // constructors' functions
@@ -25,6 +26,8 @@ void program_class::dump(ostream& stream, int n)
    classes->dump(stream, n+2);
 }
 
+program_class::program_class(Classes a1): classes(a1)
+{}
 
 Class_ class__class::copy_Class_()
 {

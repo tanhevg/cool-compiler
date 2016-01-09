@@ -197,15 +197,34 @@ void program_class::install_basic_classes() {
      errors. Part 2) can be done in a second stage, when you want
      to build mycoolc.
  */
+
+void check_duplicate_class_names(Classes classes, SemantError &semant_error) {
+
+    map<Symbol, Class_> class_by_name;
+    for (int i = classes->first(); classes->more(i); i = classes->next(i)) {
+        Class_ cls = classes->nth(i);
+        Class_ &old_cls = class_by_name[cls->get_name()];
+        if (old_cls != nullptr) {
+            semant_error.semant_error(cls) << "Duplicate class" << endl;
+            return;
+        }
+        old_cls = cls;
+    }
+
+}
+
 int program_class::semant() {
     initialize_constants();
     install_basic_classes();
 
     SemantError semant_error;
 
-    ClassTable classtable = ClassTable(classes, semant_error);
+    check_duplicate_class_names(classes, semant_error);
 
     if (semant_error.check_errors()) return 1;
+
+    classtable = ClassTable(classes);
+//    ClassTable classtable = ClassTable(classes, semant_error);
 
     InheritanceChecker inheritance_checker = InheritanceChecker(classtable, semant_error);
     traverse_tree(&inheritance_checker);

@@ -11,6 +11,8 @@
 //     String constant           str_const<Symbol>
 //
 ///////////////////////////////////////////////////////////////////////
+#ifndef _EMIT_H_
+#define _EMIT_H_
 
 #include "stringtab.h"
 
@@ -106,3 +108,4 @@
 #define BGT      "\tbgt\t"
 
 
+#endif
