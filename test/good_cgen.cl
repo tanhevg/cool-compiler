@@ -13,7 +13,11 @@ class C {
 	};
 };
 
-Class Main {
+class D inherits C {
+    c: Strin;
+};
+
+class Main {
 	main():C {
 	  (new C).init(1,true)
 	};

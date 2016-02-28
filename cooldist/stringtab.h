@@ -79,6 +79,17 @@ public:
   IntEntry(char *s, int l, int i);
 };
 
+class BoolConst
+{
+private:
+    int val;
+public:
+    BoolConst(int);
+    void code_def(ostream&, int boolclasstag);
+    void code_ref(ostream&) const;
+};
+
+
 typedef StringEntry *StringEntryP;
 typedef IdEntry *IdEntryP;
 typedef IntEntry *IntEntryP;

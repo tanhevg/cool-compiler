@@ -48,9 +48,14 @@ void AttributeResolver::before(class__class *node) {
 }
 
 void AttributeResolver::before(attr_class *node) {
-    Symbol addr_type = node->get_type();
+    Symbol attr_type = node->get_type();
     Symbol name = node->get_name();
-    if (!type_env.object_env.probe_and_add(name, addr_type)) {
+    if (attr_type != prim_slot && !type_env.class_table.get_class(attr_type)) {
+        semant_error.semant_error(type_env.current_class, node)
+        << "'" << attr_type << "': no class definition for attribute " << name << endl;
+        return;
+    }
+    if (!type_env.object_env.probe_and_add(name, attr_type)) {
         semant_error.semant_error(type_env.current_class)
         << "'" << name << "' overrides attribute with the same name" << endl;
     }

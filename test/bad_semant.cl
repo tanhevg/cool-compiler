@@ -1,6 +1,7 @@
 class C inherits B {
-	a : Int;
-	b : Bool;
+	a : Int; -- 'a' overrides attribute with the same name
+	b : Bool <- "Foo";
+	c : Strin <- "Foo"; -- 'Strin': no class definition for attribute c
 	init(x : Int, y : Bool) : C {
            {
 		a <- x;
@@ -19,7 +20,10 @@ class S inherits String {};
 
 
 class A{};
-class B inherits A{};
+class B inherits A{
+    a: String;
+};
+
 
 
 
@@ -29,7 +33,7 @@ Class Main {
         (new C).init(1,true,3);     -- Method 'C.init' formal parameter count (2) does not match actual parameter count (3)
         (new C).iinit(1,true);      -- No such method: 'C.iinit'
         let a:Int <- a*5 in {};     -- 'a' is not declared
-        let c:C <- new C, x:Bool in {
+        let c:C <- new C, x:Bool, y: Foo in {
             c<-5;                   -- Expression type is 'Int' should be a subtype of 'C'
             c <- isvoid(c);         -- Expression type is 'Bool' should be a subtype of 'C'
             c <- if x then

@@ -433,7 +433,7 @@ template <class Elem> append_node<Elem> *xcons(list_node<Elem> *l, Elem x)
     return new append_node<Elem>(l, list(x));
 }
 
-template <class E> void list_node<E>::traverse_tree(TreeVisitor *visitor) {
+template <class E> void list_node<E>::traverse_tree(TreeVisitor *visitor) { //todo re-work this using append_node
 //    visitor.before(this);
     for(int i = this->first(); this->more(i); i = this->next(i)) {
         this->nth(i)->traverse_tree(visitor);

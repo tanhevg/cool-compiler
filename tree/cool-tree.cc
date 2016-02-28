@@ -7,10 +7,7 @@
 //////////////////////////////////////////////////////////
 
 
-#include "tree.h"
-#include "cool-tree.handcode.h"
 #include "cool-tree.h"
-#include "ClassTable.h"
 
 
 // constructors' functions
@@ -674,6 +671,11 @@ Symbol class__class::get_parent()
    return parent;
 }
 
+Features class__class::get_features()
+{
+    return features;
+}
+
 
 Symbol attr_class::get_name()
 {
@@ -710,7 +712,7 @@ Symbol method_class::get_name()
 }
 Expression method_class::get_body()
 {
-   return expr;
+    return expr;
 }
 
 Symbol object_class::get_name()

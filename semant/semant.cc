@@ -1,7 +1,4 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include "semant.h"
+#include "type_checker.h"
 
 extern int semant_debug;
 extern char *curr_filename;
@@ -184,20 +181,6 @@ void program_class::install_basic_classes() {
 }
 
 
-/*   This is the entry point to the semantic checker.
-
-     Your checker should do the following two things:
-
-     1) Check that the program is semantically correct
-     2) Decorate the abstract syntax tree with type information
-        by setting the `type' field in each Expression node.
-        (see `tree.h')
-
-     You are free to first do 1), make sure you catch all semantic
-     errors. Part 2) can be done in a second stage, when you want
-     to build mycoolc.
- */
-
 void check_duplicate_class_names(Classes classes, SemantError &semant_error) {
 
     map<Symbol, Class_> class_by_name;
@@ -213,6 +196,19 @@ void check_duplicate_class_names(Classes classes, SemantError &semant_error) {
 
 }
 
+/*   This is the entry point to the semantic checker.
+
+     Your checker should do the following two things:
+
+     1) Check that the program is semantically correct
+     2) Decorate the abstract syntax tree with type information
+        by setting the `type' field in each Expression node.
+        (see `tree.h')
+
+     You are free to first do 1), make sure you catch all semantic
+     errors. Part 2) can be done in a second stage, when you want
+     to build mycoolc.
+ */
 int program_class::semant() {
     initialize_constants();
     install_basic_classes();
@@ -223,17 +219,18 @@ int program_class::semant() {
 
     if (semant_error.check_errors()) return 1;
 
-    classtable = ClassTable(classes);
+    classtable = new ClassTable();
+    traverse_tree(classtable);
 //    ClassTable classtable = ClassTable(classes, semant_error);
 
-    InheritanceChecker inheritance_checker = InheritanceChecker(classtable, semant_error);
+    InheritanceChecker inheritance_checker = InheritanceChecker(*classtable, semant_error);
     traverse_tree(&inheritance_checker);
 
     if (semant_error.check_errors()) return 1;
 
     ObjectEnv object_env;
-    MethodEnv method_env(classtable);
-    TypeEnv type_env(classtable, object_env, method_env);
+    MethodEnv method_env(*classtable);
+    TypeEnv type_env(*classtable, object_env, method_env);
 
     MethodResolver method_resolver(type_env);
     traverse_tree(&method_resolver);
@@ -247,7 +244,6 @@ int program_class::semant() {
     traverse_tree(&type_checker);
 
     if (semant_error.check_errors()) return 1;
-    /* some semantic analysis code may go here */
     return 0;
 }
 

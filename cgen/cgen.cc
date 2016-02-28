@@ -24,14 +24,20 @@
 #include "cgen.h"
 #include "cgen_gc.h"
 #include "extern_symbols.h"
+#include "cgen_helpers.h"
+#include "PrototypeCoder.h"
 
 extern void emit_string_constant(ostream &str, char *s);
 
 extern int cgen_debug;
 
-static char *gc_init_names[] =
+IntEntryP zero_int;
+StringEntryP empty_string;
+
+
+char *gc_init_names[] =
         {"_NoGC_Init", "_GenGC_Init", "_ScnGC_Init"};
-static char *gc_collect_names[] =
+char *gc_collect_names[] =
         {"_NoGC_Collect", "_GenGC_Collect", "_ScnGC_Collect"};
 
 
@@ -53,209 +59,67 @@ BoolConst truebool(TRUE);
 //
 //*********************************************************
 
+static void code_global_text(ostream&);
+static void code_global_data(ostream&);
+static void code_select_gc(ostream&);
+static void code_bools(ostream&, int);
+
 void program_class::cgen(ostream &os) {
     // spim wants comments to start with '#'
     os << "# start of generated code\n";
 
-    CodeGenerator cg(os);
-    cg.code();
+//    CodeGenerator cg(os, classtable);
+    if (cgen_debug) cout << "coding global data" << endl;
+    code_global_data(os);
+
+    //
+    // We also need to know the tag of the Int, String, and Bool classes
+    // during code generation.
+    //
+    classtable->index_attributes();
+    int intclasstag = classtable->get_class_tag(Int);
+    os << INTTAG << LABEL
+    << WORD << intclasstag << endl;
+    int boolclasstag = classtable->get_class_tag(Bool);
+    os << BOOLTAG << LABEL
+    << WORD << boolclasstag << endl;
+    int stringclasstag = classtable->get_class_tag(Str);
+    os << STRINGTAG << LABEL
+    << WORD << stringclasstag << endl;
+
+
+    if (cgen_debug) cout << "choosing gc" << endl;
+    code_select_gc(os);
+
+    if (cgen_debug) cout << "coding constants" << endl;
+
+    empty_string = stringtable.add_string("");
+    zero_int = inttable.add_string("0");
+
+    stringtable.code_string_table(os, stringclasstag);
+    inttable.code_string_table(os, intclasstag);
+    code_bools(os, boolclasstag);
+
+    PrototypeCoder prototypeCoder(os, classtable);
+    traverse_tree(&prototypeCoder);
+
+//                 Add your code to emit
+//                   - prototype objects
+//                   - class_nameTab
+//                   - dispatch tables
+//
+
+    if (cgen_debug) cout << "coding global text" << endl;
+    code_global_text(os);
+
+//                 Add your code to emit
+//                   - object initializer
+//                   - the class methods
+//                   - etc...
 
     os << "\n# end of generated code\n";
 }
 
-
-//////////////////////////////////////////////////////////////////////////////
-//
-//  emit_* procedures
-//
-//  emit_X  writes code for operation "X" to the output stream.
-//  There is an emit_X for each opcode X, as well as emit_ functions
-//  for generating names according to the naming conventions (see emit.h)
-//  and calls to support functions defined in the trap handler.
-//
-//  Register names and addresses are passed as strings.  See `emit.h'
-//  for symbolic names you can use to refer to the strings.
-//
-//////////////////////////////////////////////////////////////////////////////
-
-static void emit_load(char *dest_reg, int offset, char *source_reg, ostream &s) {
-    s << LW << dest_reg << " " << offset * WORD_SIZE << "(" << source_reg << ")"
-    << endl;
-}
-
-static void emit_store(char *source_reg, int offset, char *dest_reg, ostream &s) {
-    s << SW << source_reg << " " << offset * WORD_SIZE << "(" << dest_reg << ")"
-    << endl;
-}
-
-static void emit_load_imm(char *dest_reg, int val, ostream &s) { s << LI << dest_reg << " " << val << endl; }
-
-static void emit_load_address(char *dest_reg, char *address, ostream &s) {
-    s << LA << dest_reg << " " << address << endl;
-}
-
-static void emit_partial_load_address(char *dest_reg, ostream &s) { s << LA << dest_reg << " "; }
-
-static void emit_load_bool(char *dest, const BoolConst &b, ostream &s) {
-    emit_partial_load_address(dest, s);
-    b.code_ref(s);
-    s << endl;
-}
-
-static void emit_load_string(char *dest, StringEntry *str, ostream &s) {
-    emit_partial_load_address(dest, s);
-    str->code_ref(s);
-    s << endl;
-}
-
-static void emit_load_int(char *dest, IntEntry *i, ostream &s) {
-    emit_partial_load_address(dest, s);
-    i->code_ref(s);
-    s << endl;
-}
-
-static void emit_move(char *dest_reg, char *source_reg, ostream &s) {
-    s << MOVE << dest_reg << " " << source_reg << endl;
-}
-
-static void emit_neg(char *dest, char *src1, ostream &s) { s << NEG << dest << " " << src1 << endl; }
-
-static void emit_add(char *dest, char *src1, char *src2, ostream &s) {
-    s << ADD << dest << " " << src1 << " " << src2 << endl;
-}
-
-static void emit_addu(char *dest, char *src1, char *src2, ostream &s) {
-    s << ADDU << dest << " " << src1 << " " << src2 << endl;
-}
-
-static void emit_addiu(char *dest, char *src1, int imm, ostream &s) {
-    s << ADDIU << dest << " " << src1 << " " << imm << endl;
-}
-
-static void emit_div(char *dest, char *src1, char *src2, ostream &s) {
-    s << DIV << dest << " " << src1 << " " << src2 << endl;
-}
-
-static void emit_mul(char *dest, char *src1, char *src2, ostream &s) {
-    s << MUL << dest << " " << src1 << " " << src2 << endl;
-}
-
-static void emit_sub(char *dest, char *src1, char *src2, ostream &s) {
-    s << SUB << dest << " " << src1 << " " << src2 << endl;
-}
-
-static void emit_sll(char *dest, char *src1, int num, ostream &s) {
-    s << SLL << dest << " " << src1 << " " << num << endl;
-}
-
-static void emit_jalr(char *dest, ostream &s) { s << JALR << "\t" << dest << endl; }
-
-static void emit_jal(char *address, ostream &s) { s << JAL << address << endl; }
-
-static void emit_return(ostream &s) { s << RET << endl; }
-
-static void emit_gc_assign(ostream &s) { s << JAL << "_GenGC_Assign" << endl; }
-
-static void emit_disptable_ref(Symbol sym, ostream &s) { s << sym << DISPTAB_SUFFIX; }
-
-static void emit_init_ref(Symbol sym, ostream &s) { s << sym << CLASSINIT_SUFFIX; }
-
-static void emit_label_ref(int l, ostream &s) { s << "label" << l; }
-
-static void emit_protobj_ref(Symbol sym, ostream &s) { s << sym << PROTOBJ_SUFFIX; }
-
-static void emit_method_ref(Symbol classname, Symbol methodname, ostream &s) {
-    s << classname << METHOD_SEP << methodname;
-}
-
-static void emit_label_def(int l, ostream &s) {
-    emit_label_ref(l, s);
-    s << ":" << endl;
-}
-
-static void emit_beqz(char *source, int label, ostream &s) {
-    s << BEQZ << source << " ";
-    emit_label_ref(label, s);
-    s << endl;
-}
-
-static void emit_beq(char *src1, char *src2, int label, ostream &s) {
-    s << BEQ << src1 << " " << src2 << " ";
-    emit_label_ref(label, s);
-    s << endl;
-}
-
-static void emit_bne(char *src1, char *src2, int label, ostream &s) {
-    s << BNE << src1 << " " << src2 << " ";
-    emit_label_ref(label, s);
-    s << endl;
-}
-
-static void emit_bleq(char *src1, char *src2, int label, ostream &s) {
-    s << BLEQ << src1 << " " << src2 << " ";
-    emit_label_ref(label, s);
-    s << endl;
-}
-
-static void emit_blt(char *src1, char *src2, int label, ostream &s) {
-    s << BLT << src1 << " " << src2 << " ";
-    emit_label_ref(label, s);
-    s << endl;
-}
-
-static void emit_blti(char *src1, int imm, int label, ostream &s) {
-    s << BLT << src1 << " " << imm << " ";
-    emit_label_ref(label, s);
-    s << endl;
-}
-
-static void emit_bgti(char *src1, int imm, int label, ostream &s) {
-    s << BGT << src1 << " " << imm << " ";
-    emit_label_ref(label, s);
-    s << endl;
-}
-
-static void emit_branch(int l, ostream &s) {
-    s << BRANCH;
-    emit_label_ref(l, s);
-    s << endl;
-}
-
-//
-// Push a register on the stack. The stack grows towards smaller addresses.
-//
-static void emit_push(char *reg, ostream &str) {
-    emit_store(reg, 0, SP, str);
-    emit_addiu(SP, SP, -4, str);
-}
-
-//
-// Fetch the integer value in an Int object.
-// Emits code to fetch the integer value of the Integer object pointed
-// to by register source into the register dest
-//
-static void emit_fetch_int(char *dest, char *source, ostream &s) { emit_load(dest, DEFAULT_OBJFIELDS, source, s); }
-
-//
-// Emits code to store the integer value contained in register source
-// into the Integer object pointed to by dest.
-//
-static void emit_store_int(char *source, char *dest, ostream &s) { emit_store(source, DEFAULT_OBJFIELDS, dest, s); }
-
-
-static void emit_test_collector(ostream &s) {
-    emit_push(ACC, s);
-    emit_move(ACC, SP, s); // stack end
-    emit_move(A1, ZERO, s); // allocate nothing
-    s << JAL << gc_collect_names[cgen_Memmgr] << endl;
-    emit_addiu(SP, SP, 4, s);
-    emit_load(ACC, 0, SP, s);
-}
-
-static void emit_gc_check(char *source, ostream &s) {
-    if (source != (char *) A1) emit_move(A1, source, s);
-    s << JAL << "_gc_check" << endl;
-}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -401,7 +265,7 @@ void BoolConst::code_def(ostream &s, int boolclasstag) {
 //
 //***************************************************
 
-void CodeGenerator::code_global_data() {
+void code_global_data(ostream &str) {
     Symbol main = idtable.lookup_string(MAINNAME);
     Symbol string = idtable.lookup_string(STRINGNAME);
     Symbol integer = idtable.lookup_string(INTNAME);
@@ -431,16 +295,6 @@ void CodeGenerator::code_global_data() {
     str << GLOBAL << BOOLTAG << endl;
     str << GLOBAL << STRINGTAG << endl;
 
-    //
-    // We also need to know the tag of the Int, String, and Bool classes
-    // during code generation.
-    //
-    str << INTTAG << LABEL
-    << WORD << intclasstag << endl;
-    str << BOOLTAG << LABEL
-    << WORD << boolclasstag << endl;
-    str << STRINGTAG << LABEL
-    << WORD << stringclasstag << endl;
 }
 
 
@@ -451,7 +305,7 @@ void CodeGenerator::code_global_data() {
 //
 //***************************************************
 
-void CodeGenerator::code_global_text() {
+void code_global_text(ostream &str) {
     str << GLOBAL << HEAP_START << endl
     << HEAP_START << LABEL
     << WORD << 0 << endl
@@ -469,12 +323,12 @@ void CodeGenerator::code_global_text() {
     str << endl;
 }
 
-void CodeGenerator::code_bools(int boolclasstag) {
+void code_bools(ostream& str, int boolclasstag) {
     falsebool.code_def(str, boolclasstag);
     truebool.code_def(str, boolclasstag);
 }
 
-void CodeGenerator::code_select_gc() {
+void code_select_gc(ostream &str) {
     //
     // Generate GC choice constants (pointers to GC functions)
     //
@@ -503,52 +357,6 @@ void CodeGenerator::code_select_gc() {
 //
 //********************************************************
 
-void CodeGenerator::code_constants() {
-    //
-    // Add constants that are required by the code generator.
-    //
-    stringtable.add_string("");
-    inttable.add_string("0");
-
-    stringtable.code_string_table(str, stringclasstag);
-    inttable.code_string_table(str, intclasstag);
-    code_bools(boolclasstag);
-}
-
-
-CodeGenerator::CodeGenerator(ostream &s) : str(s), classtag(0) {
-    stringclasstag = classtag++;
-    intclasstag = classtag++;
-    boolclasstag = classtag++;
-}
-
-
-void CodeGenerator::code() {
-    if (cgen_debug) cout << "coding global data" << endl;
-    code_global_data();
-
-    if (cgen_debug) cout << "choosing gc" << endl;
-    code_select_gc();
-
-    if (cgen_debug) cout << "coding constants" << endl;
-    code_constants();
-
-//                 Add your code to emit
-//                   - prototype objects
-//                   - class_nameTab
-//                   - dispatch tables
-//
-
-    if (cgen_debug) cout << "coding global text" << endl;
-    code_global_text();
-
-//                 Add your code to emit
-//                   - object initializer
-//                   - the class methods
-//                   - etc...
-
-}
-
 //******************************************************************
 //
 //   Fill in the following methods to produce code for the
@@ -558,7 +366,7 @@ void CodeGenerator::code() {
 //   constant integers, strings, and booleans are provided.
 //
 //*****************************************************************
-
+/*
 void assign_class::code(ostream &s) {
 }
 
@@ -612,7 +420,7 @@ void comp_class::code(ostream &s) {
 
 void int_const_class::code(ostream &s) {
     //
-    // Need to be sure we have an IntEntry *, not an arbitrary Symbol
+    // Need to be sure we have an IntEntry , not an arbitrary Symbol
     //
     emit_load_int(ACC, inttable.lookup_string(token->get_string()), s);
 }
@@ -638,3 +446,4 @@ void object_class::code(ostream &s) {
 }
 
 
+*/

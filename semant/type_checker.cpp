@@ -101,12 +101,12 @@ void TypeChecker::before(method_class *node) {
 }
 void TypeChecker::after(attr_class *node) {
     Symbol init_type = node->get_initializer()->get_type();
-    if (init_type) {
+    if (!init_type) {
         return;
     }
     if (!type_env.class_table.is_subtype(init_type, node->get_type())) {
         semant_error.semant_error(type_env.current_class, node) << "Attribute '" << node->get_name()
-        << "' initialiser type should be a subtipe of the declared type '" << node->get_type()
+        << "' initializer type should be a subtype of the declared type '" << node->get_type()
         << "'; found '" << init_type << "'" << endl;
     }
 }
@@ -236,7 +236,13 @@ void TypeChecker::after(block_class *node) {
 void TypeChecker::before(let_class *node) {
     type_env.object_env.enterscope();
     Symbol type_decl = node->get_type_decl();
-    if (type_decl == SELF_TYPE) {
+    if (!type_env.class_table.get_class(type_decl)) {
+        semant_error.semant_error(type_env.current_class, node)
+        << "'" << type_decl << "': no class definition" << endl;
+        return;
+
+    }
+    if (type_decl == SELF_TYPE) {  //todo this is wrong?
         type_decl = type_env.current_class->get_name();
     }
     type_env.object_env.addid(node->get_identifier(), type_decl);
@@ -244,7 +250,7 @@ void TypeChecker::before(let_class *node) {
 void TypeChecker::after(let_class *node) {
     type_env.object_env.exitscope();
     Symbol type_decl = node->get_type_decl();
-    if (type_decl == SELF_TYPE) {
+    if (type_decl == SELF_TYPE) {//todo this is wrong?
         type_decl = type_env.current_class->get_name();
     }
     Symbol init_type = node->get_init()->get_type();

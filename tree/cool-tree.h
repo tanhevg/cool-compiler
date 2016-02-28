@@ -9,7 +9,6 @@
 //////////////////////////////////////////////////////////
 
 
-#include "ClassTable.h"
 #include "tree.h"
 #include "cool-tree.handcode.h"
 
@@ -124,11 +123,12 @@ typedef Expressions_class *Expressions;
 typedef list_node<Case> Cases_class;
 typedef Cases_class *Cases;
 
+class ClassTable;
 // define the class for constructors
 // define constructor - program
 class program_class : public Program_class {
 private:
-    ClassTable classtable;
+    ClassTable *classtable;
 protected:
    Classes classes;
 public:
