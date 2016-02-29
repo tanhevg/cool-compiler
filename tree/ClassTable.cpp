@@ -2,6 +2,7 @@
 // Created by Evgeny Tanhilevich on 04/01/2016.
 //
 
+#include <algorithm>
 #include "ClassTable.h"
 #include "extern_symbols.h"
 
@@ -20,10 +21,10 @@ Symbol ClassTable::get_parent(Symbol class_name) {
 
 Symbol ClassTable::join(const vector<Symbol> &types) {
     vector<vector<Symbol>> ancestors;
-    for(Symbol s : types) {
+    for (Symbol s : types) {
         vector<Symbol> v;
         Symbol ss = s;
-        while(ss != No_class) {
+        while (ss != No_class) {
             v.insert(v.begin(), ss);
             ss = get_class(ss)->get_parent();
         }
@@ -34,10 +35,10 @@ Symbol ClassTable::join(const vector<Symbol> &types) {
     int i = 0;
     bool br = false;
     Symbol ret = nullptr, test;
-    vector<Symbol>& v0 = ancestors[0];
+    vector<Symbol> &v0 = ancestors[0];
     do {
         test = v0[i];
-        for(vector<Symbol>& v : ancestors) {
+        for (vector<Symbol> &v : ancestors) {
             if (i >= v.size() || v[i] != test) {
                 br = true;
                 break;
@@ -64,7 +65,7 @@ bool ClassTable::is_subtype(Symbol sub, Symbol super) {
     return false;
 }
 
-AttributeRecord* ClassTableRecord::get_attribute_record(Symbol s) {
+AttributeRecord *ClassTableRecord::get_attribute_record(Symbol s) {
     auto it = attribute_by_name.find(s);
     if (it == attribute_by_name.end()) {
         return nullptr;
@@ -73,8 +74,7 @@ AttributeRecord* ClassTableRecord::get_attribute_record(Symbol s) {
     }
 }
 
-int ClassTable::get_attr_index(Symbol class_name, Symbol attr_name)
-{
+int ClassTable::get_attr_index(Symbol class_name, Symbol attr_name) {
     do {
         AttributeRecord *attribute_record = class_by_name[class_name]->get_attribute_record(attr_name);
         if (attribute_record != nullptr) {
@@ -84,13 +84,12 @@ int ClassTable::get_attr_index(Symbol class_name, Symbol attr_name)
     } while (class_name != No_class);
     return -1;
 }
-void ClassTable::before(class__class *node)
-{
+
+void ClassTable::before(class__class *node) {
     class_by_name[node->get_name()] = currentClassRecord = new ClassTableRecord(node, class_tag++);
 }
 
-void ClassTable::after(attr_class *node)
-{
+void ClassTable::after(attr_class *node) {
     currentClassRecord->add_attr(node);
 }
 
@@ -115,15 +114,21 @@ int ClassTable::get_prototype_size(Symbol class_name) {
     return class_by_name[class_name]->get_prototype_size();
 }
 
-void ClassTable::visit_attrs_of_class(Symbol class_name, TreeVisitor *other) {
-    class_by_name[class_name]->visit_attributes(other);
+void ClassTable::visit_ordered_attrs_of_class(Symbol class_name, TreeVisitor *other) {
+    class_by_name[class_name]->visit_attributes_ordered(other);
 
 }
 
-void ClassTableRecord::visit_attributes(TreeVisitor *visitor) {
+void ClassTableRecord::visit_attributes_ordered(TreeVisitor *visitor) {
+    vector<AttributeRecord *> attr_records;
     for (auto item : attribute_by_name) {
-        Feature attr = item.second->get_attr();
-        attr->traverse_tree(visitor);
+        attr_records.push_back(item.second);
+    }
+    sort(attr_records.begin(), attr_records.end(), [](AttributeRecord *a, AttributeRecord *b) {
+        return a->get_index() < b->get_index();
+    });
+    for (AttributeRecord *record : attr_records) {
+        record->get_attr()->traverse_tree(visitor);
     }
 }
 

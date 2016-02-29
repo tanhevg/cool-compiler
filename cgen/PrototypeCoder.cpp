@@ -26,7 +26,7 @@ void PrototypeCoder::before(class__class *cls) {
     << WORD;
     emit_disptable_ref(class_name, str);
     str << endl;
-    classTable->visit_attrs_of_class(class_name, &attr_coder);
+    classTable->visit_ordered_attrs_of_class(class_name, &attr_coder);
 }
 
 void PrototypeAttrCoder::before(attr_class *attr) {

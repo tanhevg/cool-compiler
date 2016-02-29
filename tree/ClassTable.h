@@ -60,7 +60,7 @@ public:
     }
     AttributeRecord* get_attribute_record(Symbol s);
     void add_attr(attr_class *attr);
-    void visit_attributes(TreeVisitor *visitor);
+    void visit_attributes_ordered(TreeVisitor *visitor);
     void index_attributes(int start_idx);
     virtual ~ClassTableRecord();
 
@@ -86,7 +86,7 @@ public:
     void before(class__class *node);
     void after(attr_class *node);
 
-    void visit_attrs_of_class(Symbol class_name, TreeVisitor *other);
+    void visit_ordered_attrs_of_class(Symbol class_name, TreeVisitor *other);
 
     void index_attributes();
 

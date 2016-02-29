@@ -14,7 +14,7 @@ class C {
 };
 
 class D inherits C {
-    c: Strin;
+    c: String;
 };
 
 class Main {
