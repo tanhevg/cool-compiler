@@ -5,7 +5,7 @@ class C {
            {
 
            let s:String <- "QWERTY" in {
-		a <- x;
+		a <- x + 5;
 		b <- y;
 		};
 		self;

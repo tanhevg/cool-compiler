@@ -67,21 +67,21 @@ public:
 };
 
 int main() {
-//    A a;
-//    B b;
-//    Test1 test;
-//    a.test(test);
-//    b.test(test);
-//    A& a1 = b;
-//    a1.test(test);
-//    return 0;
+    A a;
+    B b;
+    Test1 test;
+    a.test(test);
+    b.test(test);
+    A& a1 = b;
+    a1.test(test);
+    return 0;
 
 //    map<pair<string, string>, pair<CC, CC>> m;
 //    m[pair<string, string>("a", "b")] = pair<CC, CC>(new C('A'), new C('B'));
 //    cout << m[pair<string, string>("a", "b")].first << endl;
 //    cout << (m[pair<string, string>("a", "c")].first == NULL) << endl;
-    RefTest rt1(42);
-    vector<unique_ptr<RefTest>> v;
-    v.push_back(make_unique<RefTest>(rt1));
-    cout << rt1.get_val() << endl;
+//    RefTest rt1(42);
+//    vector<unique_ptr<RefTest>> v;
+//    v.push_back(make_unique<RefTest>(rt1));
+//    cout << rt1.get_val() << endl;
 }

@@ -805,6 +805,9 @@ Expression branch_class::get_expr() {
 Cases typcase_class::get_cases() {
    return cases;
 }
+Expression typcase_class::get_expr() {
+   return expr;
+}
 
 Expression loop_class::get_predicate() {
    return pred;

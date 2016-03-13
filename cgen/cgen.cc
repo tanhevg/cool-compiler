@@ -26,6 +26,7 @@
 #include "extern_symbols.h"
 #include "cgen_helpers.h"
 #include "PrototypeCoder.h"
+#include "TemporariesCounter.h"
 
 extern void emit_string_constant(ostream &str, char *s);
 
@@ -102,6 +103,9 @@ void program_class::cgen(ostream &os) {
 
     PrototypeCoder prototypeCoder(os, classtable);
     traverse_tree(&prototypeCoder);
+
+    TemporariesCounter temporariesCounter;
+    traverse_tree(&temporariesCounter);
 
 //                 Add your code to emit
 //                   - prototype objects

@@ -111,9 +111,13 @@ void dump_with_types(ostream&,int);
 Symbol get_name();
 
 #define Case_EXTRAS                             \
+int temporaries_count;	    		    	 \
 virtual Expression get_expr() = 0;\
 virtual Symbol get_type_decl() = 0;\
-virtual void dump_with_types(ostream& ,int) = 0;
+virtual void dump_with_types(ostream& ,int) = 0;\
+int get_temporaries_count() {return temporaries_count;} \
+void set_temporaries_count(int _temporaries_count) {temporaries_count = _temporaries_count;}
+
 
 
 #define branch_EXTRAS                                   \
@@ -148,7 +152,8 @@ Expression get_predicate();\
 Expression get_body();
 
 #define typcase_EXTRAS                                   \
-Cases get_cases();
+Cases get_cases();\
+Expression get_expr();
 
 #define block_EXTRAS                                   \
 Expressions get_body();
@@ -164,11 +169,14 @@ Symbol get_type_name();
 
 #define Expression_EXTRAS                    \
 Symbol type;                                 \
+int temporaries_count;	    		    	 \
 Symbol get_type() { return type; }           \
 Expression set_type(Symbol s) { type = s; return this; } \
 virtual void dump_with_types(ostream&,int) = 0;  \
 void dump_type(ostream&, int);               \
-Expression_class() { type = (Symbol) NULL; }
+Expression_class() { type = (Symbol) NULL; temporaries_count = 0;} \
+int get_temporaries_count() {return temporaries_count;} \
+void set_temporaries_count(int _temporaries_count) {temporaries_count = _temporaries_count;}
 
 
 
