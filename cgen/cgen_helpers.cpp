@@ -26,12 +26,12 @@ void emit_object_header(class__class* cls, int tag, ostream& s) {
 //
 //////////////////////////////////////////////////////////////////////////////
 
-static void emit_load(char *dest_reg, int offset, char *source_reg, ostream &s) {
+void emit_load(char *dest_reg, int offset, char *source_reg, ostream &s) {
     s << LW << dest_reg << " " << offset * WORD_SIZE << "(" << source_reg << ")"
     << endl;
 }
 
-static void emit_store(char *source_reg, int offset, char *dest_reg, ostream &s) {
+void emit_store(char *source_reg, int offset, char *dest_reg, ostream &s) {
     s << SW << source_reg << " " << offset * WORD_SIZE << "(" << dest_reg << ")"
     << endl;
 }
@@ -44,19 +44,19 @@ static void emit_load_address(char *dest_reg, char *address, ostream &s) {
 
 static void emit_partial_load_address(char *dest_reg, ostream &s) { s << LA << dest_reg << " "; }
 
-static void emit_load_bool(char *dest, const BoolConst &b, ostream &s) {
+void emit_load_bool(char *dest, const BoolConst &b, ostream &s) {
     emit_partial_load_address(dest, s);
     b.code_ref(s);
     s << endl;
 }
 
-static void emit_load_string(char *dest, StringEntry *str, ostream &s) {
+void emit_load_string(char *dest, StringEntry *str, ostream &s) {
     emit_partial_load_address(dest, s);
     str->code_ref(s);
     s << endl;
 }
 
-static void emit_load_int(char *dest, IntEntry *i, ostream &s) {
+void emit_load_int(char *dest, IntEntry *i, ostream &s) {
     emit_partial_load_address(dest, s);
     i->code_ref(s);
     s << endl;
@@ -66,10 +66,24 @@ static void emit_move(char *dest_reg, char *source_reg, ostream &s) {
     s << MOVE << dest_reg << " " << source_reg << endl;
 }
 
-static void emit_neg(char *dest, char *src1, ostream &s) { s << NEG << dest << " " << src1 << endl; }
+void emit_neg(char *dest, char *src1, ostream &s) { s << NEG << dest << " " << src1 << endl; }
 
-static void emit_add(char *dest, char *src1, char *src2, ostream &s) {
+void emit_not(char *dest, char *src1, ostream &s) { s << NOT << dest << " " << src1 << endl; }
+
+void emit_add(char *dest, char *src1, char *src2, ostream &s) {
     s << ADD << dest << " " << src1 << " " << src2 << endl;
+}
+
+void emit_slt(char *dest, char *src1, char *src2, ostream &s) {
+    s << SLT << dest << " " << src1 << " " << src2 << endl;
+}
+
+void emit_sle(char *dest, char *src1, char *src2, ostream &s) {
+    s << SLE << dest << " " << src1 << " " << src2 << endl;
+}
+
+void emit_seq(char *dest, char *src1, char *src2, ostream &s) {
+    s << SEQ << dest << " " << src1 << " " << src2 << endl;
 }
 
 static void emit_addu(char *dest, char *src1, char *src2, ostream &s) {
@@ -80,15 +94,15 @@ static void emit_addiu(char *dest, char *src1, int imm, ostream &s) {
     s << ADDIU << dest << " " << src1 << " " << imm << endl;
 }
 
-static void emit_div(char *dest, char *src1, char *src2, ostream &s) {
+void emit_div(char *dest, char *src1, char *src2, ostream &s) {
     s << DIV << dest << " " << src1 << " " << src2 << endl;
 }
 
-static void emit_mul(char *dest, char *src1, char *src2, ostream &s) {
+void emit_mul(char *dest, char *src1, char *src2, ostream &s) {
     s << MUL << dest << " " << src1 << " " << src2 << endl;
 }
 
-static void emit_sub(char *dest, char *src1, char *src2, ostream &s) {
+void emit_sub(char *dest, char *src1, char *src2, ostream &s) {
     s << SUB << dest << " " << src1 << " " << src2 << endl;
 }
 
@@ -182,13 +196,13 @@ static void emit_push(char *reg, ostream &str) {
 // Emits code to fetch the integer value of the Integer object pointed
 // to by register source into the register dest
 //
-static void emit_fetch_int(char *dest, char *source, ostream &s) { emit_load(dest, DEFAULT_OBJFIELDS, source, s); }
+void emit_fetch_int(char *dest, char *source, ostream &s) { emit_load(dest, DEFAULT_OBJFIELDS, source, s); }
 
 //
 // Emits code to store the integer value contained in register source
 // into the Integer object pointed to by dest.
 //
-static void emit_store_int(char *source, char *dest, ostream &s) { emit_store(source, DEFAULT_OBJFIELDS, dest, s); }
+void emit_store_int(char *source, char *dest, ostream &s) { emit_store(source, DEFAULT_OBJFIELDS, dest, s); }
 
 
 static void emit_test_collector(ostream &s) {

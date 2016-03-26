@@ -256,6 +256,14 @@ void BoolConst::code_def(ostream &s, int boolclasstag) {
     s << WORD << val << endl;                             // value (0 or 1)
 }
 
+static ObjectEnvRecord *stack_entry(Symbol declaring_type, int offset) {
+    return new ObjectEnvRecord(declaring_type, FP, offset);
+}
+
+static ObjectEnvRecord *heap_entry(Symbol declaring_type, int offset) { // todo use attribute AST node instead of offset?
+    return new ObjectEnvRecord(declaring_type, SELF, offset);
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //
 //  CgenClassTable methods
@@ -370,84 +378,217 @@ void code_select_gc(ostream &str) {
 //   constant integers, strings, and booleans are provided.
 //
 //*****************************************************************
-/*
-void assign_class::code(ostream &s) {
+
+void assign_class::code(CodeGenerator *cgen, int n_temp) {
+    cgen->code(this, n_temp);
 }
 
-void static_dispatch_class::code(ostream &s) {
+void static_dispatch_class::code(CodeGenerator *cgen, int n_temp) {
+    cgen->code(this, n_temp);
 }
 
-void dispatch_class::code(ostream &s) {
+void dispatch_class::code(CodeGenerator *cgen, int n_temp) {
+    cgen->code(this, n_temp);
 }
 
-void cond_class::code(ostream &s) {
+void cond_class::code(CodeGenerator *cgen, int n_temp) {
+    cgen->code(this, n_temp);
 }
 
-void loop_class::code(ostream &s) {
+void loop_class::code(CodeGenerator *cgen, int n_temp) {
+    cgen->code(this, n_temp);
 }
 
-void typcase_class::code(ostream &s) {
+void typcase_class::code(CodeGenerator *cgen, int n_temp) {
+    cgen->code(this, n_temp);
 }
 
-void block_class::code(ostream &s) {
+void block_class::code(CodeGenerator *cgen, int n_temp) {
+    cgen->code(this, n_temp);
 }
 
-void let_class::code(ostream &s) {
+void let_class::code(CodeGenerator *cgen, int n_temp) {
+    cgen->code(this, n_temp);
 }
 
-void plus_class::code(ostream &s) {
+void CodeGenerator::binary_int_op(Binary_Expression_class *expr, int n_temp) {
+    expr->get_e1()->code(this, n_temp);
+    emit_store(ACC, n_temp, FP, str);
+    expr->get_e2()->code(this, n_temp + 1);
+    emit_load(T1, n_temp, FP, str);
+    // Both operands come in object form, therefore we need to fetch their values into respective registers to proceed
+    emit_fetch_int(T1, T1, str);
+    emit_fetch_int(ACC, ACC, str);
 }
 
-void sub_class::code(ostream &s) {
+void CodeGenerator::unary_int_op(Unary_Expression_class *expr, int n_temp) {
+    expr->get_e1()->code(this, n_temp);
+    emit_fetch_int(ACC, ACC, str);
 }
 
-void mul_class::code(ostream &s) {
+void CodeGenerator::code(plus_class *expr, int n_temp) {
+    binary_int_op(expr, n_temp);
+    emit_add(ACC, T1, ACC, str);
 }
 
-void divide_class::code(ostream &s) {
+void plus_class::code(CodeGenerator *cgen, int n_temp) {
+    cgen->code(this, n_temp);
 }
 
-void neg_class::code(ostream &s) {
+void CodeGenerator::code(sub_class *expr, int n_temp) {
+    binary_int_op(expr, n_temp);
+    emit_sub(ACC, T1, ACC, str);
 }
 
-void lt_class::code(ostream &s) {
+void sub_class::code(CodeGenerator *cgen, int n_temp) {
+    cgen->code(this, n_temp);
 }
 
-void eq_class::code(ostream &s) {
+void CodeGenerator::code(mul_class *expr, int n_temp) {
+    binary_int_op(expr, n_temp);
+    emit_mul(ACC, T1, ACC, str);
 }
 
-void leq_class::code(ostream &s) {
+void mul_class::code(CodeGenerator *cgen, int n_temp) {
+    cgen->code(this, n_temp);
 }
 
-void comp_class::code(ostream &s) {
+void CodeGenerator::code(divide_class *expr, int n_temp) {
+    binary_int_op(expr, n_temp);
+    emit_div(ACC, T1, ACC, str);
 }
 
-void int_const_class::code(ostream &s) {
+void divide_class::code(CodeGenerator *cgen, int n_temp) {
+    cgen->code(this, n_temp);
+}
+
+void CodeGenerator::code(neg_class *expr, int n_temp) {
+    unary_int_op(expr, n_temp);
+    emit_neg(ACC, ACC, str);
+}
+
+void neg_class::code(CodeGenerator *cgen, int n_temp) {
+    cgen->code(this, n_temp);
+}
+
+void CodeGenerator::code(lt_class *expr, int n_temp) {
+    binary_int_op(expr, n_temp);
+    emit_slt(ACC, T1, ACC, str);
+}
+
+void lt_class::code(CodeGenerator *cgen, int n_temp) {
+    cgen->code(this, n_temp);
+}
+
+void CodeGenerator::code(eq_class *expr, int n_temp) {
+    binary_int_op(expr, n_temp);
+    emit_seq(ACC, T1, ACC, str);
+}
+
+void eq_class::code(CodeGenerator *cgen, int n_temp) {
+    cgen->code(this, n_temp);
+}
+
+void CodeGenerator::code(leq_class *expr, int n_temp) {
+    binary_int_op(expr, n_temp);
+    emit_sle(ACC, T1, ACC, str);
+}
+
+void leq_class::code(CodeGenerator *cgen, int n_temp) {
+    cgen->code(this, n_temp);
+}
+
+void CodeGenerator::code(comp_class *expr, int n_temp) {
+    unary_int_op(expr, n_temp);
+    emit_not(ACC, ACC, str);
+}
+
+void comp_class::code(CodeGenerator *cgen, int n_temp) {
+    cgen->code(this, n_temp);
+}
+
+void CodeGenerator::code(int_const_class *expr, int n_temp) {
     //
     // Need to be sure we have an IntEntry , not an arbitrary Symbol
     //
-    emit_load_int(ACC, inttable.lookup_string(token->get_string()), s);
+    emit_load_int(ACC, inttable.lookup_string(expr->get_token()->get_string()), str);
 }
 
-void string_const_class::code(ostream &s) {
-    emit_load_string(ACC, stringtable.lookup_string(token->get_string()), s);
+void int_const_class::code(CodeGenerator *cgen, int n_temp) {
+    cgen->code(this, n_temp);
 }
 
-void bool_const_class::code(ostream &s) {
-    emit_load_bool(ACC, BoolConst(val), s);
+void CodeGenerator::code(string_const_class *expr, int n_temp) {
+    emit_load_string(ACC, stringtable.lookup_string(expr->get_token()->get_string()), str);
 }
 
-void new__class::code(ostream &s) {
+void string_const_class::code(CodeGenerator *cgen, int n_temp) {
+    cgen->code(this, n_temp);
 }
 
-void isvoid_class::code(ostream &s) {
+void CodeGenerator::code(bool_const_class *expr, int n_temp) {
+    emit_load_bool(ACC, BoolConst(expr->get_val()), str);
 }
 
-void no_expr_class::code(ostream &s) {
+void bool_const_class::code(CodeGenerator *cgen, int n_temp) {
+    cgen->code(this, n_temp);
 }
 
-void object_class::code(ostream &s) {
+void new__class::code(CodeGenerator *cgen, int n_temp) {
+    cgen->code(this, n_temp);
+}
+
+void isvoid_class::code(CodeGenerator *cgen, int n_temp) {
+    cgen->code(this, n_temp);
+}
+
+void no_expr_class::code(CodeGenerator *cgen, int n_temp) {
+
+}
+
+void object_class::code(CodeGenerator *cgen, int n_temp) {
+    cgen->code(this, n_temp);
+}
+
+void CodeGenerator::code(assign_class *expr, int n_temp) {
+
+}
+void CodeGenerator::code(static_dispatch_class *expr, int n_temp) {
+
+}
+void CodeGenerator::code(dispatch_class *expr, int n_temp) {
+
+}
+void CodeGenerator::code(cond_class *expr, int n_temp) {
+
+}
+void CodeGenerator::code(loop_class *expr, int n_temp) {
+
+}
+void CodeGenerator::code(typcase_class *expr, int n_temp) {
+
+}
+void CodeGenerator::code(block_class *expr, int n_temp) {
+
+}
+void CodeGenerator::code(let_class *expr, int n_temp) {
+
+}
+void CodeGenerator::code(new__class *expr, int n_temp) {
+
+}
+void CodeGenerator::code(isvoid_class *expr, int n_temp) {
+
+}
+void CodeGenerator::code(object_class *expr, int n_temp) {
+
 }
 
 
-*/
+void ObjectEnvRecord::code_ref(ostream &_str) {
+    _str << offset * WORD_SIZE << "(" << reg << ")";
+}
+
+void ObjectEnvRecord::code_store(ostream &_str) {
+    emit_store(ACC, offset, reg, _str);
+}

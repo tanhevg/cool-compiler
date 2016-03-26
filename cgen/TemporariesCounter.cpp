@@ -37,7 +37,7 @@ void TemporariesCounter::after(block_class *node) {
 void TemporariesCounter::after(let_class *node) {
     node->set_temporaries_count(max(
             node->get_init()->get_temporaries_count(),
-            node->get_body()->get_temporaries_count()));
+            node->get_body()->get_temporaries_count() + 1));
 }
 
 void TemporariesCounter::after(branch_class *node) {
@@ -62,8 +62,8 @@ void TemporariesCounter::after_expr(Unary_Expression_class *node) {
 
 void TemporariesCounter::after_expr(Binary_Expression_class *node) {
     node->set_temporaries_count(max(
-            node->get_e1()->get_temporaries_count() + 1,
-            node->get_e2()->get_temporaries_count()));
+            node->get_e1()->get_temporaries_count(),
+            node->get_e2()->get_temporaries_count() + 1));
 }
 
 void TemporariesCounter::after(mul_class *node) {

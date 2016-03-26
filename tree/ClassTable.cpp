@@ -160,7 +160,7 @@ void ClassTable::index_attributes_rec(Symbol class_name) {
     if (parent_name != No_class) {
         index_attributes_rec(parent_name);
         ClassTableRecord *&parent_record = class_by_name[parent_name];
-        int start_index = parent_record->get_prototype_size();
+        int start_index = parent_record->get_attribute_count() + 3;// space for class tag, object size and dispatch pointer
         class_table_record->index_attributes(start_index);
         class_table_record->copy_attributes(parent_record);
     } else {

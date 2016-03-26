@@ -167,20 +167,19 @@ Expression get_body();
 #define new__EXTRAS                                   \
 Symbol get_type_name();
 
-#define Expression_EXTRAS                    \
-Symbol type;                                 \
-int temporaries_count;	    		    	 \
-Symbol get_type() { return type; }           \
-Expression set_type(Symbol s) { type = s; return this; } \
-virtual void dump_with_types(ostream&,int) = 0;  \
-void dump_type(ostream&, int);               \
-Expression_class() { type = (Symbol) NULL; temporaries_count = 0;} \
-int get_temporaries_count() {return temporaries_count;} \
-void set_temporaries_count(int _temporaries_count) {temporaries_count = _temporaries_count;}
+class CodeGenerator;
 
+#define int_const_EXTRAS \
+Symbol get_token() { return token; }
 
+#define string_const_EXTRAS \
+Symbol get_token() { return token; }
+
+#define bool_const_EXTRAS \
+Boolean get_val() { return val; }
 
 #define Expression_SHARED_EXTRAS           \
+void code(CodeGenerator *cgen, int n_temp); \
 void traverse_tree(TreeVisitor *visitor);   \
 void dump_with_types(ostream&,int);
 

@@ -74,14 +74,14 @@
 #define T2   "$t2"		// Temporary 2 
 #define T3   "$t3"		// Temporary 3 
 #define SP   "$sp"		// Stack pointer 
-#define FP   "$fp"		// Frame pointer 
-#define RA   "$ra"		// Return address 
+#define FP   "$fp"		// Frame pointer
+#define RA   "$ra"		// Return address
 
 //
 // Opcodes
 //
-#define JALR  "\tjalr\t"  
-#define JAL   "\tjal\t"                 
+#define JALR  "\tjalr\t"
+#define JAL   "\tjal\t"
 #define RET   "\tjr\t$ra\t"
 
 #define SW    "\tsw\t"
@@ -106,6 +106,11 @@
 #define BLEQ     "\tble\t"
 #define BLT      "\tblt\t"
 #define BGT      "\tbgt\t"
+
+#define SLT     "\tslt\t"
+#define SEQ     "\tseq\t"
+#define SLE     "\tsle\t"
+#define NOT     "\tnot\t"
 
 
 #endif

@@ -74,13 +74,20 @@ public:
 typedef class Expression_class *Expression;
 
 class Expression_class : public tree_node {
+private:
+    Symbol type;
+    int temporaries_count;
 public:
-   tree_node *copy()		 { return copy_Expression(); }
-   virtual Expression copy_Expression() = 0;
-
-#ifdef Expression_EXTRAS
-   Expression_EXTRAS
-#endif
+    tree_node *copy()		 { return copy_Expression(); }
+    virtual Expression copy_Expression() = 0;
+    Symbol get_type() { return type; }
+    Expression set_type(Symbol s) { type = s; return this; }
+    virtual void dump_with_types(ostream&,int) = 0;
+    virtual void code(CodeGenerator *cgen, int n_temp) = 0;
+    void dump_type(ostream&, int);
+    Expression_class() { type = (Symbol) NULL; temporaries_count = 0;}
+    int get_temporaries_count() {return temporaries_count;}
+    void set_temporaries_count(int _temporaries_count) {temporaries_count = _temporaries_count;}
 };
 
 
