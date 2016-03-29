@@ -38,6 +38,8 @@
 #define STRCONST_PREFIX      "str_const"
 #define BOOLCONST_PREFIX     "bool_const"
 
+#define OBJECT_COPY          "Object.copy"
+
 
 #define EMPTYSLOT            0
 #define LABEL                ":\n"

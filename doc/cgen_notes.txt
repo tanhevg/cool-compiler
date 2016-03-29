@@ -1,4 +1,4 @@
- - Operators dealing with Int's and Bool's should load and store to the only attribute of respective objects (so the pointer plus 3 words)
+ - Operators dealing with Int's and Bool's deal with them in object form; temporary objects are created on heap for result of each expression
  - Initialisation with constants should load the appropriate label to $a0, and then store $a0 in the right place in memory (heap or stack)
  
  - self should be passed in $a0 for coolaid. we store it in $s0; need to also store self in AR and put it back in $s0 on method return (callee responsibility)
@@ -14,9 +14,9 @@
 
      |----------------|
      | old $fp        |
-     | arg 1          |
-     | ...            |
      | arg N          |
+     | ...            |
+     | arg 1          |
      | return         | <---- $fp
      | old $s0 (self) |
      | temp 1         |

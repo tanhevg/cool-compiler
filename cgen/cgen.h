@@ -23,8 +23,8 @@ public:
     Symbol get_declaring_type() { return declaring_type; }
     char* get_reg() {return reg;}
     int get_offset() {return offset;}
-    void code_ref(ostream &_str);
-    void code_store(ostream &_str);
+    void code_ref(ostream &str);
+    void code_store(ostream &str);
 
 };
 
@@ -34,11 +34,23 @@ class CodeGenerator: public TreeVisitor {
 private:
     ObjectEnv object_env; //todo need to delete the naked pointers
     ostream &str;
-    void binary_int_op(Binary_Expression_class *expr, int n_temp);
-    void unary_int_op(Unary_Expression_class *expr, int n_temp);
+    void binary_int_op(Binary_Expression_class *expr, char *opcode, int n_temp, Symbol result_type);
+    void unary_int_op(Unary_Expression_class *expr, char *opcode, int n_temp);
+    int condition_count;
+    int loop_count;
+    int scope_index; // used for indexing attributes within a class, and formals of a method
 public:
-    CodeGenerator(ostream& _str):object_env(), str(_str)
+    CodeGenerator(ostream& _str):object_env(), str(_str), condition_count(0), loop_count(0), scope_index(0)
                      {}
+
+    void before(class__class *node);
+    void after(class__class *node);
+
+    void before(method_class *node);
+    void after(method_class *node);
+
+    void after(attr_class *node);
+    void after(formal_class *node);
 
     void code(assign_class *expr, int n_temp);
     void code(static_dispatch_class *expr, int n_temp);

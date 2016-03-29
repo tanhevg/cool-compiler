@@ -411,24 +411,34 @@ void let_class::code(CodeGenerator *cgen, int n_temp) {
     cgen->code(this, n_temp);
 }
 
-void CodeGenerator::binary_int_op(Binary_Expression_class *expr, int n_temp) {
+/**
+ * Operators dealing with Int's and Bool's deal with them in object form.
+ * Temporary objects are created on heap for result of each expression
+ * Expression result in $a0 is the address of the newly created object on the heap
+ */
+void CodeGenerator::binary_int_op(Binary_Expression_class *expr, char *opcode, int n_temp, Symbol result_type) {
     expr->get_e1()->code(this, n_temp);
     emit_store(ACC, n_temp, FP, str);
     expr->get_e2()->code(this, n_temp + 1);
     emit_load(T1, n_temp, FP, str);
     // Both operands come in object form, therefore we need to fetch their values into respective registers to proceed
     emit_fetch_int(T1, T1, str);
-    emit_fetch_int(ACC, ACC, str);
+    emit_fetch_int(T2, ACC, str);
+    str << opcode << T1 << " " << T1 << " " << T2 << endl;
+    emit_new(result_type, str); // create (new) the result on the heap; its address is now in $a0
+    emit_store_int(T1, ACC, str); // NB: this works for both ints and bools
 }
 
-void CodeGenerator::unary_int_op(Unary_Expression_class *expr, int n_temp) {
+void CodeGenerator::unary_int_op(Unary_Expression_class *expr, char *opcode, int n_temp) {
     expr->get_e1()->code(this, n_temp);
-    emit_fetch_int(ACC, ACC, str);
+    emit_fetch_int(T1, ACC, str);
+    str << opcode << T1 << " " << T1 << endl;
+    emit_new(Int, str);
+    emit_store_int(T1, ACC, str);
 }
 
 void CodeGenerator::code(plus_class *expr, int n_temp) {
-    binary_int_op(expr, n_temp);
-    emit_add(ACC, T1, ACC, str);
+    binary_int_op(expr, ADD, n_temp, Int);
 }
 
 void plus_class::code(CodeGenerator *cgen, int n_temp) {
@@ -436,8 +446,7 @@ void plus_class::code(CodeGenerator *cgen, int n_temp) {
 }
 
 void CodeGenerator::code(sub_class *expr, int n_temp) {
-    binary_int_op(expr, n_temp);
-    emit_sub(ACC, T1, ACC, str);
+    binary_int_op(expr, SUB, n_temp, Int);
 }
 
 void sub_class::code(CodeGenerator *cgen, int n_temp) {
@@ -445,8 +454,7 @@ void sub_class::code(CodeGenerator *cgen, int n_temp) {
 }
 
 void CodeGenerator::code(mul_class *expr, int n_temp) {
-    binary_int_op(expr, n_temp);
-    emit_mul(ACC, T1, ACC, str);
+    binary_int_op(expr, MUL, n_temp, Int);
 }
 
 void mul_class::code(CodeGenerator *cgen, int n_temp) {
@@ -454,8 +462,7 @@ void mul_class::code(CodeGenerator *cgen, int n_temp) {
 }
 
 void CodeGenerator::code(divide_class *expr, int n_temp) {
-    binary_int_op(expr, n_temp);
-    emit_div(ACC, T1, ACC, str);
+    binary_int_op(expr, DIV, n_temp, Int);
 }
 
 void divide_class::code(CodeGenerator *cgen, int n_temp) {
@@ -463,8 +470,7 @@ void divide_class::code(CodeGenerator *cgen, int n_temp) {
 }
 
 void CodeGenerator::code(neg_class *expr, int n_temp) {
-    unary_int_op(expr, n_temp);
-    emit_neg(ACC, ACC, str);
+    unary_int_op(expr, NEG, n_temp);
 }
 
 void neg_class::code(CodeGenerator *cgen, int n_temp) {
@@ -472,8 +478,7 @@ void neg_class::code(CodeGenerator *cgen, int n_temp) {
 }
 
 void CodeGenerator::code(lt_class *expr, int n_temp) {
-    binary_int_op(expr, n_temp);
-    emit_slt(ACC, T1, ACC, str);
+    binary_int_op(expr, SLT, n_temp, Bool);
 }
 
 void lt_class::code(CodeGenerator *cgen, int n_temp) {
@@ -481,8 +486,7 @@ void lt_class::code(CodeGenerator *cgen, int n_temp) {
 }
 
 void CodeGenerator::code(eq_class *expr, int n_temp) {
-    binary_int_op(expr, n_temp);
-    emit_seq(ACC, T1, ACC, str);
+    binary_int_op(expr, SEQ, n_temp, Bool);
 }
 
 void eq_class::code(CodeGenerator *cgen, int n_temp) {
@@ -490,8 +494,7 @@ void eq_class::code(CodeGenerator *cgen, int n_temp) {
 }
 
 void CodeGenerator::code(leq_class *expr, int n_temp) {
-    binary_int_op(expr, n_temp);
-    emit_sle(ACC, T1, ACC, str);
+    binary_int_op(expr, SLE, n_temp, Bool);
 }
 
 void leq_class::code(CodeGenerator *cgen, int n_temp) {
@@ -499,8 +502,7 @@ void leq_class::code(CodeGenerator *cgen, int n_temp) {
 }
 
 void CodeGenerator::code(comp_class *expr, int n_temp) {
-    unary_int_op(expr, n_temp);
-    emit_not(ACC, ACC, str);
+    unary_int_op(expr, NOT, n_temp);
 }
 
 void comp_class::code(CodeGenerator *cgen, int n_temp) {
@@ -543,7 +545,6 @@ void isvoid_class::code(CodeGenerator *cgen, int n_temp) {
 }
 
 void no_expr_class::code(CodeGenerator *cgen, int n_temp) {
-
 }
 
 void object_class::code(CodeGenerator *cgen, int n_temp) {
@@ -551,44 +552,100 @@ void object_class::code(CodeGenerator *cgen, int n_temp) {
 }
 
 void CodeGenerator::code(assign_class *expr, int n_temp) {
-
+//todo
 }
 void CodeGenerator::code(static_dispatch_class *expr, int n_temp) {
-
+//todo
 }
 void CodeGenerator::code(dispatch_class *expr, int n_temp) {
+    emit_push(FP,str);
+    Expressions actuals = expr->get_actuals();
+    for (int i = 0; i < actuals->len(); i++) {
+        actuals->nth(actuals->len() - i - 1)->code(this, n_temp);
+        emit_push(ACC, str);
+    }
+    Expression callee = expr->get_callee();
+    callee->code(this, n_temp);
 
+//todo
 }
 void CodeGenerator::code(cond_class *expr, int n_temp) {
-
+//todo
 }
 void CodeGenerator::code(loop_class *expr, int n_temp) {
-
+//todo
 }
 void CodeGenerator::code(typcase_class *expr, int n_temp) {
-
+//todo
 }
 void CodeGenerator::code(block_class *expr, int n_temp) {
-
+    Expressions body = expr->get_body();
+    for (int i = 0; i < body->len(); i++) { // todo revisit
+        body->nth(i)->code(this, n_temp);
+    }
 }
 void CodeGenerator::code(let_class *expr, int n_temp) {
-
+//todo
 }
 void CodeGenerator::code(new__class *expr, int n_temp) {
-
+//todo
 }
 void CodeGenerator::code(isvoid_class *expr, int n_temp) {
-
+//todo
 }
 void CodeGenerator::code(object_class *expr, int n_temp) {
-
 }
 
 
-void ObjectEnvRecord::code_ref(ostream &_str) {
-    _str << offset * WORD_SIZE << "(" << reg << ")";
+void ObjectEnvRecord::code_ref(ostream &str) {
+    str << offset * WORD_SIZE << "(" << reg << ")";
 }
 
-void ObjectEnvRecord::code_store(ostream &_str) {
-    emit_store(ACC, offset, reg, _str);
+void ObjectEnvRecord::code_store(ostream &str) {
+    emit_store(ACC, offset, reg, str);
+}
+
+void CodeGenerator::before(class__class *node) {
+    object_env.enterscope();
+    scope_index = DEFAULT_OBJFIELDS + 1;
+}
+
+void CodeGenerator::after(class__class *node) {
+    object_env.exitscope();
+}
+
+void CodeGenerator::before(method_class *node) {
+    object_env.enterscope();
+    scope_index = 1;
+}
+
+void CodeGenerator::after(method_class *node) {
+    emit_move(FP, SP, str);
+    emit_push(RA, str);
+    emit_push(SELF, str);
+    emit_move(SELF, ACC, str);
+    Expression body = node->get_body();
+    int tmp_count = body->get_temporaries_count();
+    emit_addiu(SP, SP, -4 * tmp_count, str);
+
+    // $fp points at return address; immediatelly below it is the saved previous self
+    // therefore the space for the first available temporary is 2 words below $fp
+    body->code(this, 2);
+    emit_load(RA, 0, FP, str);
+    emit_load(SELF, -4, FP, str);
+    int frame_size = 4 * (scope_index - 1) +  // parameters
+            4 * tmp_count +
+            8; // return address and old self
+    emit_addiu(SP, SP, frame_size, str);
+    emit_load(FP, 0, SP, str);
+    emit_return(str);
+    object_env.exitscope();
+}
+
+void CodeGenerator::after(formal_class *node) {
+    object_env.addid(node->get_name(), stack_entry(node->get_type(), scope_index++));
+}
+
+void CodeGenerator::after(attr_class *node) {
+    object_env.addid(node->get_name(), heap_entry(node->get_type(), scope_index++));
 }

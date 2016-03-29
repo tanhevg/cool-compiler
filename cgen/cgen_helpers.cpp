@@ -62,35 +62,35 @@ void emit_load_int(char *dest, IntEntry *i, ostream &s) {
     s << endl;
 }
 
-static void emit_move(char *dest_reg, char *source_reg, ostream &s) {
+void emit_move(char *dest_reg, char *source_reg, ostream &s) {
     s << MOVE << dest_reg << " " << source_reg << endl;
 }
 
-void emit_neg(char *dest, char *src1, ostream &s) { s << NEG << dest << " " << src1 << endl; }
-
-void emit_not(char *dest, char *src1, ostream &s) { s << NOT << dest << " " << src1 << endl; }
-
-void emit_add(char *dest, char *src1, char *src2, ostream &s) {
-    s << ADD << dest << " " << src1 << " " << src2 << endl;
-}
-
-void emit_slt(char *dest, char *src1, char *src2, ostream &s) {
-    s << SLT << dest << " " << src1 << " " << src2 << endl;
-}
-
-void emit_sle(char *dest, char *src1, char *src2, ostream &s) {
-    s << SLE << dest << " " << src1 << " " << src2 << endl;
-}
-
-void emit_seq(char *dest, char *src1, char *src2, ostream &s) {
-    s << SEQ << dest << " " << src1 << " " << src2 << endl;
-}
-
-static void emit_addu(char *dest, char *src1, char *src2, ostream &s) {
-    s << ADDU << dest << " " << src1 << " " << src2 << endl;
-}
-
-static void emit_addiu(char *dest, char *src1, int imm, ostream &s) {
+//void emit_neg(char *dest, char *src1, ostream &s) { s << NEG << dest << " " << src1 << endl; }
+//
+//void emit_not(char *dest, char *src1, ostream &s) { s << NOT << dest << " " << src1 << endl; }
+//
+//void emit_add(char *dest, char *src1, char *src2, ostream &s) {
+//    s << ADD << dest << " " << src1 << " " << src2 << endl;
+//}
+//
+//void emit_slt(char *dest, char *src1, char *src2, ostream &s) {
+//    s << SLT << dest << " " << src1 << " " << src2 << endl;
+//}
+//
+//void emit_sle(char *dest, char *src1, char *src2, ostream &s) {
+//    s << SLE << dest << " " << src1 << " " << src2 << endl;
+//}
+//
+//void emit_seq(char *dest, char *src1, char *src2, ostream &s) {
+//    s << SEQ << dest << " " << src1 << " " << src2 << endl;
+//}
+//
+//static void emit_addu(char *dest, char *src1, char *src2, ostream &s) {
+//    s << ADDU << dest << " " << src1 << " " << src2 << endl;
+//}
+//
+void emit_addiu(char *dest, char *src1, int imm, ostream &s) {
     s << ADDIU << dest << " " << src1 << " " << imm << endl;
 }
 
@@ -114,7 +114,7 @@ static void emit_jalr(char *dest, ostream &s) { s << JALR << "\t" << dest << end
 
 static void emit_jal(char *address, ostream &s) { s << JAL << address << endl; }
 
-static void emit_return(ostream &s) { s << RET << endl; }
+void emit_return(ostream &s) { s << RET << endl; }
 
 static void emit_gc_assign(ostream &s) { s << JAL << "_GenGC_Assign" << endl; }
 
@@ -186,7 +186,7 @@ static void emit_branch(int l, ostream &s) {
 //
 // Push a register on the stack. The stack grows towards smaller addresses.
 //
-static void emit_push(char *reg, ostream &str) {
+void emit_push(char *reg, ostream &str) {
     emit_store(reg, 0, SP, str);
     emit_addiu(SP, SP, -4, str);
 }
@@ -218,4 +218,11 @@ static void emit_gc_check(char *source, ostream &s) {
     if (source != (char *) A1) emit_move(A1, source, s);
     s << JAL << "_gc_check" << endl;
 }
+
+void emit_new(Symbol sym, ostream &str) {
+    emit_partial_load_address(ACC, str);
+    str << sym << PROTOBJ_SUFFIX << endl;
+    emit_jal(OBJECT_COPY, str);
+}
+
 

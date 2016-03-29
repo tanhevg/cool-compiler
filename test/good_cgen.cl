@@ -15,6 +15,9 @@ class C {
 
 class D inherits C {
     c: String;
+    d():Int {
+        5 + 2 * 3
+    };
 };
 
 class Main {

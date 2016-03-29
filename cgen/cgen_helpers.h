@@ -19,23 +19,13 @@ void emit_load_bool(char *dest, const BoolConst &b, ostream &s);
 void emit_load_string(char *dest, StringEntry *str, ostream &s) ;
 void emit_load_int(char *dest, IntEntry *i, ostream &s);
 void emit_load(char *dest_reg, int offset, char *source_reg, ostream &s);
-void emit_add(char *dest, char *src1, char *src2, ostream &s);
 void emit_fetch_int(char *dest, char *source, ostream &s);
 void emit_store_int(char *source, char *dest, ostream &s);
-void emit_div(char *dest, char *src1, char *src2, ostream &s);
-void emit_mul(char *dest, char *src1, char *src2, ostream &s);
-void emit_sub(char *dest, char *src1, char *src2, ostream &s);
-void emit_neg(char *dest, char *src1, ostream &s);
-void emit_slt(char *dest, char *src1, char *src2, ostream &s);
-void emit_seq(char *dest, char *src1, char *src2, ostream &s);
-void emit_sle(char *dest, char *src1, char *src2, ostream &s);
-void emit_not(char *dest, char *src1, ostream &s);
+void emit_move(char *dest_reg, char *source_reg, ostream &s);
 
-
-
-
-
-
-
+void emit_new(Symbol sym, ostream &str);
+void emit_push(char *reg, ostream &str);
+void emit_addiu(char *dest, char *src1, int imm, ostream &s);
+void emit_return(ostream &s);
 
 #endif //COOL_COMPILER_CGEN_HELPERS_H_H
