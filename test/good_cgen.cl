@@ -1,6 +1,7 @@
 class C {
-	a : Int;
+	a : Int <- 3;
 	b : Bool;
+
 	init(x : Int, y : Bool) : C {
            {
 
@@ -11,6 +12,7 @@ class C {
 		self;
            }
 	};
+
 };
 
 class D inherits C {
@@ -21,7 +23,10 @@ class D inherits C {
 };
 
 class Main {
-	main():C {
-	  (new C).init(1,true)
-	};
+--	main():C {
+--	  (new C).init(1,true)
+--	};
+    main(): Int {
+        (new D).d()
+    };
 };

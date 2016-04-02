@@ -93,6 +93,7 @@ Symbol get_type();
 #define method_EXTRAS	            		            	\
 void traverse_tree(TreeVisitor *visitor);	            	\
 Symbol get_return_type();	                				\
+bool is_implemented();\
 Expression get_body();
 
 

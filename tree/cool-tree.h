@@ -185,12 +185,21 @@ protected:
    Formals formals;
    Symbol return_type;
    Expression expr;
+    bool implemented;
 public:
    method_class(Symbol a1, Formals a2, Symbol a3, Expression a4) {
       name = a1;
       formals = a2;
       return_type = a3;
       expr = a4;
+       implemented = false;
+   }
+   method_class(Symbol a1, Formals a2, Symbol a3, Expression a4, bool a5) {
+      name = a1;
+      formals = a2;
+      return_type = a3;
+      expr = a4;
+       implemented = a5;
    }
    Feature copy_Feature();
    void dump(ostream& stream, int n);
@@ -799,6 +808,7 @@ Cases append_Cases(Cases, Cases);
 Program program(Classes);
 Class_ class_(Symbol, Symbol, Features, Symbol);
 Feature method(Symbol, Formals, Symbol, Expression);
+Feature method(Symbol, Formals, Symbol, Expression, bool);
 Feature attr(Symbol, Symbol, Expression);
 Formal formal(Symbol, Symbol);
 Case branch(Symbol, Symbol, Expression);

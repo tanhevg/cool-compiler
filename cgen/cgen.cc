@@ -116,6 +116,9 @@ void program_class::cgen(ostream &os) {
     if (cgen_debug) cout << "coding global text" << endl;
     code_global_text(os);
 
+    CodeGenerator codeGen(classtable, os);
+    traverse_tree(&codeGen);
+
 //                 Add your code to emit
 //                   - object initializer
 //                   - the class methods
@@ -126,135 +129,6 @@ void program_class::cgen(ostream &os) {
 
 
 
-///////////////////////////////////////////////////////////////////////////////
-//
-// coding strings, ints, and booleans
-//
-// Cool has three kinds of constants: strings, ints, and booleans.
-// This section defines code generation for each type.
-//
-// All string constants are listed in the global "stringtable" and have
-// type StringEntry.  StringEntry methods are defined both for String
-// constant definitions and references.
-//
-// All integer constants are listed in the global "inttable" and have
-// type IntEntry.  IntEntry methods are defined for Int
-// constant definitions and references.
-//
-// Since there are only two Bool values, there is no need for a table.
-// The two booleans are represented by instances of the class BoolConst,
-// which defines the definition and reference methods for Bools.
-//
-///////////////////////////////////////////////////////////////////////////////
-
-//
-// Strings
-//
-void StringEntry::code_ref(ostream &s) {
-    s << STRCONST_PREFIX << index;
-}
-
-//
-// Emit code for a constant String.
-// You should fill in the code naming the dispatch table.
-//
-
-void StringEntry::code_def(ostream &s, int stringclasstag) {
-    IntEntryP lensym = inttable.add_int(len);
-
-    // Add -1 eye catcher
-    s << WORD << "-1" << endl;
-
-    code_ref(s);
-    s << LABEL                                             // label
-    << WORD << stringclasstag << endl                                 // tag
-    << WORD << (DEFAULT_OBJFIELDS + STRING_SLOTS + (len + 4) / 4) << endl; // size
-
-    s << WORD;
-    emit_disptable_ref(Str, s);
-    s << endl;
-    s << WORD;
-    lensym->code_ref(s);
-    s << endl;            // string length
-    emit_string_constant(s, str);                                // ascii string
-    s << ALIGN;                                                 // align to word
-}
-
-//
-// StrTable::code_string
-// Generate a string object definition for every string constant in the 
-// stringtable.
-//
-void StrTable::code_string_table(ostream &s, int stringclasstag) {
-    for (List<StringEntry> *l = tbl; l; l = l->tl())
-        l->hd()->code_def(s, stringclasstag);
-}
-
-//
-// Ints
-//
-void IntEntry::code_ref(ostream &s) {
-    s << INTCONST_PREFIX << index;
-}
-
-//
-// Emit code for a constant Integer.
-// You should fill in the code naming the dispatch table.
-//
-
-void IntEntry::code_def(ostream &s, int intclasstag) {
-    // Add -1 eye catcher
-    s << WORD << "-1" << endl;
-
-    code_ref(s);
-    s << LABEL                                // label
-    << WORD << intclasstag << endl                      // class tag
-    << WORD << (DEFAULT_OBJFIELDS + INT_SLOTS) << endl;  // object size
-    s << WORD;
-    emit_disptable_ref(Int, s);
-    s << endl;                                          // dispatch table
-    s << WORD << str << endl;                           // integer value
-}
-
-
-//
-// IntTable::code_string_table
-// Generate an Int object definition for every Int constant in the
-// inttable.
-//
-void IntTable::code_string_table(ostream &s, int intclasstag) {
-    for (List<IntEntry> *l = tbl; l; l = l->tl())
-        l->hd()->code_def(s, intclasstag);
-}
-
-
-//
-// Bools
-//
-BoolConst::BoolConst(int i) : val(i) { assert(i == 0 || i == 1); }
-
-void BoolConst::code_ref(ostream &s) const {
-    s << BOOLCONST_PREFIX << val;
-}
-
-//
-// Emit code for a constant Bool.
-// You should fill in the code naming the dispatch table.
-//
-
-void BoolConst::code_def(ostream &s, int boolclasstag) {
-    // Add -1 eye catcher
-    s << WORD << "-1" << endl;
-
-    code_ref(s);
-    s << LABEL                                  // label
-    << WORD << boolclasstag << endl                       // class tag
-    << WORD << (DEFAULT_OBJFIELDS + BOOL_SLOTS) << endl;   // object size
-    s << WORD;
-    emit_disptable_ref(Bool, s);
-    s << endl;                                            // dispatch table
-    s << WORD << val << endl;                             // value (0 or 1)
-}
 
 static ObjectEnvRecord *stack_entry(Symbol declaring_type, int offset) {
     return new ObjectEnvRecord(declaring_type, FP, offset);
@@ -356,199 +230,104 @@ void code_select_gc(ostream &str) {
 }
 
 
-//********************************************************
-//
-// Emit code to reserve space for and initialize all of
-// the constants.  Class names should have been added to
-// the string table (in the supplied code, is is done
-// during the construction of the inheritance graph), and
-// code for emitting string constants as a side effect adds
-// the string's length to the integer table.  The constants
-// are emmitted by running through the stringtable and inttable
-// and producing code for each entry.
-//
-//********************************************************
-
-//******************************************************************
-//
-//   Fill in the following methods to produce code for the
-//   appropriate expression.  You may add or remove parameters
-//   as you wish, but if you do, remember to change the parameters
-//   of the declarations in `cool-tree.h'  Sample code for
-//   constant integers, strings, and booleans are provided.
-//
-//*****************************************************************
-
-void assign_class::code(CodeGenerator *cgen, int n_temp) {
-    cgen->code(this, n_temp);
-}
-
-void static_dispatch_class::code(CodeGenerator *cgen, int n_temp) {
-    cgen->code(this, n_temp);
-}
-
-void dispatch_class::code(CodeGenerator *cgen, int n_temp) {
-    cgen->code(this, n_temp);
-}
-
-void cond_class::code(CodeGenerator *cgen, int n_temp) {
-    cgen->code(this, n_temp);
-}
-
-void loop_class::code(CodeGenerator *cgen, int n_temp) {
-    cgen->code(this, n_temp);
-}
-
-void typcase_class::code(CodeGenerator *cgen, int n_temp) {
-    cgen->code(this, n_temp);
-}
-
-void block_class::code(CodeGenerator *cgen, int n_temp) {
-    cgen->code(this, n_temp);
-}
-
-void let_class::code(CodeGenerator *cgen, int n_temp) {
-    cgen->code(this, n_temp);
-}
-
 /**
  * Operators dealing with Int's and Bool's deal with them in object form.
  * Temporary objects are created on heap for result of each expression
  * Expression result in $a0 is the address of the newly created object on the heap
  */
 void CodeGenerator::binary_int_op(Binary_Expression_class *expr, char *opcode, int n_temp, Symbol result_type) {
+    str << "#\tcode the first operand of binary integer operator" << endl;
     expr->get_e1()->code(this, n_temp);
+    str << "#\tstore address of the first operand result in the temporary on the stack frame" << endl;
     emit_store(ACC, n_temp, FP, str);
+    str << "#\tcode the second operand of binary integer operator" << endl;
     expr->get_e2()->code(this, n_temp + 1);
+    str << "#\tload address of the first operand result into $t1" << endl;
     emit_load(T1, n_temp, FP, str);
     // Both operands come in object form, therefore we need to fetch their values into respective registers to proceed
+    str << "#\tfetch first operand value into $t1" << endl;
     emit_fetch_int(T1, T1, str);
+    str << "#\tfetch second operand value into $t2" << endl;
     emit_fetch_int(T2, ACC, str);
-    str << opcode << T1 << " " << T1 << " " << T2 << endl;
-    emit_new(result_type, str); // create (new) the result on the heap; its address is now in $a0
-    emit_store_int(T1, ACC, str); // NB: this works for both ints and bools
+    str << "#\tcode the operation; use $t5 because $t1-$t4 are clobbered by Object.copy" << endl;
+    str << opcode << T5 << " " << T1 << " " << T2 << endl;
+    str << "#\tcreate (new) the result on the heap" << endl;
+    emit_new(result_type, str);
+    str << "#\tstore the operation value" << endl;
+    emit_store_int(T5, ACC, str);
 }
 
 void CodeGenerator::unary_int_op(Unary_Expression_class *expr, char *opcode, int n_temp) {
+    str << "#\tcode the operand of unary integer operator" << endl;
     expr->get_e1()->code(this, n_temp);
+    str << "#\tfetch first operand value into $t1" << endl;
     emit_fetch_int(T1, ACC, str);
-    str << opcode << T1 << " " << T1 << endl;
+    str << "#\tcode the operation; use $t5 because $t1-$t4 are clobbered by Object.copy" << endl;
+    str << opcode << T5 << " " << T1 << endl;
+    str << "#\tcreate (new) the result on the heap" << endl;
     emit_new(Int, str);
-    emit_store_int(T1, ACC, str);
+    str << "#\tstore the operation value" << endl;
+    emit_store_int(T5, ACC, str);
 }
 
 void CodeGenerator::code(plus_class *expr, int n_temp) {
+    str << endl << "#\t'+'" << endl;
     binary_int_op(expr, ADD, n_temp, Int);
 }
 
-void plus_class::code(CodeGenerator *cgen, int n_temp) {
-    cgen->code(this, n_temp);
-}
-
 void CodeGenerator::code(sub_class *expr, int n_temp) {
+    str << endl << "#\t'-'" << endl;
     binary_int_op(expr, SUB, n_temp, Int);
 }
 
-void sub_class::code(CodeGenerator *cgen, int n_temp) {
-    cgen->code(this, n_temp);
-}
-
 void CodeGenerator::code(mul_class *expr, int n_temp) {
+    str << endl << "#\t'*'" << endl;
     binary_int_op(expr, MUL, n_temp, Int);
 }
 
-void mul_class::code(CodeGenerator *cgen, int n_temp) {
-    cgen->code(this, n_temp);
-}
-
 void CodeGenerator::code(divide_class *expr, int n_temp) {
+    str << endl << "#\t'/'" << endl;
     binary_int_op(expr, DIV, n_temp, Int);
 }
 
-void divide_class::code(CodeGenerator *cgen, int n_temp) {
-    cgen->code(this, n_temp);
-}
-
 void CodeGenerator::code(neg_class *expr, int n_temp) {
+    str << endl << "#\t'~'" << endl;
     unary_int_op(expr, NEG, n_temp);
 }
 
-void neg_class::code(CodeGenerator *cgen, int n_temp) {
-    cgen->code(this, n_temp);
-}
-
 void CodeGenerator::code(lt_class *expr, int n_temp) {
+    str << endl << "#\t'<'" << endl;
     binary_int_op(expr, SLT, n_temp, Bool);
 }
 
-void lt_class::code(CodeGenerator *cgen, int n_temp) {
-    cgen->code(this, n_temp);
-}
-
 void CodeGenerator::code(eq_class *expr, int n_temp) {
+    str << endl << "#\t'='" << endl;
     binary_int_op(expr, SEQ, n_temp, Bool);
 }
 
-void eq_class::code(CodeGenerator *cgen, int n_temp) {
-    cgen->code(this, n_temp);
-}
-
 void CodeGenerator::code(leq_class *expr, int n_temp) {
+    str << endl << "#\t'<='" << endl;
     binary_int_op(expr, SLE, n_temp, Bool);
 }
 
-void leq_class::code(CodeGenerator *cgen, int n_temp) {
-    cgen->code(this, n_temp);
-}
-
 void CodeGenerator::code(comp_class *expr, int n_temp) {
+    str << endl << "#\t'!'" << endl;
     unary_int_op(expr, NOT, n_temp);
 }
 
-void comp_class::code(CodeGenerator *cgen, int n_temp) {
-    cgen->code(this, n_temp);
-}
-
 void CodeGenerator::code(int_const_class *expr, int n_temp) {
-    //
-    // Need to be sure we have an IntEntry , not an arbitrary Symbol
-    //
+    str << endl << "#\tint const" << expr->get_token() << endl;
     emit_load_int(ACC, inttable.lookup_string(expr->get_token()->get_string()), str);
 }
 
-void int_const_class::code(CodeGenerator *cgen, int n_temp) {
-    cgen->code(this, n_temp);
-}
-
 void CodeGenerator::code(string_const_class *expr, int n_temp) {
+    str << endl << "#\tString const" << expr->get_token() << endl;
     emit_load_string(ACC, stringtable.lookup_string(expr->get_token()->get_string()), str);
 }
 
-void string_const_class::code(CodeGenerator *cgen, int n_temp) {
-    cgen->code(this, n_temp);
-}
-
 void CodeGenerator::code(bool_const_class *expr, int n_temp) {
+    str << endl << "#\tBoolean const" << endl;
     emit_load_bool(ACC, BoolConst(expr->get_val()), str);
-}
-
-void bool_const_class::code(CodeGenerator *cgen, int n_temp) {
-    cgen->code(this, n_temp);
-}
-
-void new__class::code(CodeGenerator *cgen, int n_temp) {
-    cgen->code(this, n_temp);
-}
-
-void isvoid_class::code(CodeGenerator *cgen, int n_temp) {
-    cgen->code(this, n_temp);
-}
-
-void no_expr_class::code(CodeGenerator *cgen, int n_temp) {
-}
-
-void object_class::code(CodeGenerator *cgen, int n_temp) {
-    cgen->code(this, n_temp);
 }
 
 void CodeGenerator::code(assign_class *expr, int n_temp) {
@@ -558,10 +337,13 @@ void CodeGenerator::code(static_dispatch_class *expr, int n_temp) {
 //todo
 }
 void CodeGenerator::code(dispatch_class *expr, int n_temp) {
+    str << endl << "#\tcalling " << expr->get_name() << endl;
     emit_push(FP,str);
     Expressions actuals = expr->get_actuals();
     for (int i = 0; i < actuals->len(); i++) {
-        actuals->nth(actuals->len() - i - 1)->code(this, n_temp);
+        int idx = actuals->len() - i - 1;
+        str << "#\tcoding actual parameter #" << idx << endl;
+        actuals->nth(idx)->code(this, n_temp);
         emit_push(ACC, str);
     }
     Expression callee = expr->get_callee();
@@ -594,6 +376,8 @@ void CodeGenerator::code(isvoid_class *expr, int n_temp) {
 //todo
 }
 void CodeGenerator::code(object_class *expr, int n_temp) {
+    str << endl << "#\tobject " << expr->get_name() << endl;
+    object_env.lookup(expr->get_name())->code_load(str);
 }
 
 
@@ -605,9 +389,19 @@ void ObjectEnvRecord::code_store(ostream &str) {
     emit_store(ACC, offset, reg, str);
 }
 
+void ObjectEnvRecord::code_load(ostream &str) {
+    emit_load(ACC, offset, reg, str);
+}
+void CodeGenerator::before(program_class *node) {
+    object_env.enterscope();
+    object_env.addid(self, heap_entry(SELF_TYPE, 0));
+}
 void CodeGenerator::before(class__class *node) {
     object_env.enterscope();
     scope_index = DEFAULT_OBJFIELDS + 1;
+    ObjectEnvAttrVisitor attr_visitor = ObjectEnvAttrVisitor(object_env);
+    class_table->visit_ordered_attrs_of_class(node->get_name(), &attr_visitor);
+    str << "#\tstart of class " << node->get_name() << endl;
 }
 
 void CodeGenerator::after(class__class *node) {
@@ -615,29 +409,43 @@ void CodeGenerator::after(class__class *node) {
 }
 
 void CodeGenerator::before(method_class *node) {
+    if (node->is_implemented()) {
+        return;
+    }
     object_env.enterscope();
     scope_index = 1;
+    str << "#\tstart of method " << node->get_name() << endl;
 }
 
 void CodeGenerator::after(method_class *node) {
+    if (node->is_implemented()) {
+        return;
+    }
+    Expression body = node->get_body();
+    int tmp_count = body->get_temporaries_count();
+    str << "#\tset up stack frame; number of temporaries = " << tmp_count << endl;
     emit_move(FP, SP, str);
     emit_push(RA, str);
     emit_push(SELF, str);
     emit_move(SELF, ACC, str);
-    Expression body = node->get_body();
-    int tmp_count = body->get_temporaries_count();
     emit_addiu(SP, SP, -4 * tmp_count, str);
 
     // $fp points at return address; immediatelly below it is the saved previous self
     // therefore the space for the first available temporary is 2 words below $fp
+    str << "#\tcode method body" << endl;
     body->code(this, 2);
+    str << "#\tload return address from the frame" << endl;
     emit_load(RA, 0, FP, str);
+    str << "#\trestore previous self" << endl;
     emit_load(SELF, -4, FP, str);
     int frame_size = 4 * (scope_index - 1) +  // parameters
             4 * tmp_count +
             8; // return address and old self
+    str << "#\tpop the frame" << endl;
     emit_addiu(SP, SP, frame_size, str);
+    str << "#\trestore previous $fp" << endl;
     emit_load(FP, 0, SP, str);
+    str << "#\treturn" << endl;
     emit_return(str);
     object_env.exitscope();
 }
@@ -646,6 +454,6 @@ void CodeGenerator::after(formal_class *node) {
     object_env.addid(node->get_name(), stack_entry(node->get_type(), scope_index++));
 }
 
-void CodeGenerator::after(attr_class *node) {
+void ObjectEnvAttrVisitor::after(attr_class *node) {
     object_env.addid(node->get_name(), heap_entry(node->get_type(), scope_index++));
 }

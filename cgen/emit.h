@@ -75,7 +75,9 @@
 #define T1   "$t1"		// Temporary 1 
 #define T2   "$t2"		// Temporary 2 
 #define T3   "$t3"		// Temporary 3 
-#define SP   "$sp"		// Stack pointer 
+#define T4   "$t4"		// Temporary 4
+#define T5   "$t5"		// Temporary 5
+#define SP   "$sp"		// Stack pointer
 #define FP   "$fp"		// Frame pointer
 #define RA   "$ra"		// Return address
 

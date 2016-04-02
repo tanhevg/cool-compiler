@@ -524,6 +524,11 @@ Feature method(Symbol name, Formals formals, Symbol return_type, Expression expr
   return new method_class(name, formals, return_type, expr);
 }
 
+Feature method(Symbol name, Formals formals, Symbol return_type, Expression expr, bool implemented)
+{
+  return new method_class(name, formals, return_type, expr, implemented);
+}
+
 Feature attr(Symbol name, Symbol type_decl, Expression init)
 {
   return new attr_class(name, type_decl, init);
@@ -706,6 +711,12 @@ Symbol method_class::get_return_type()
 {
    return return_type;
 }
+
+bool method_class::is_implemented()
+{
+   return implemented;
+}
+
 Symbol method_class::get_name()
 {
    return name;

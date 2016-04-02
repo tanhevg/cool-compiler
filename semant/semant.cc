@@ -108,9 +108,9 @@ void program_class::install_basic_classes() {
                    No_class,
                    append_Features(
                            append_Features(
-                                   single_Features(method(cool_abort, nil_Formals(), Object, no_expr())),
-                                   single_Features(method(type_name, nil_Formals(), Str, no_expr()))),
-                           single_Features(method(copy_, nil_Formals(), SELF_TYPE, no_expr()))),
+                                   single_Features(method(cool_abort, nil_Formals(), Object, no_expr(), true)),
+                                   single_Features(method(type_name, nil_Formals(), Str, no_expr(), true))),
+                           single_Features(method(copy_, nil_Formals(), SELF_TYPE, no_expr(), true))),
                    filename)));
 
     // 
@@ -127,11 +127,11 @@ void program_class::install_basic_classes() {
                            append_Features(
                                    append_Features(
                                            single_Features(method(out_string, single_Formals(formal(arg, Str)),
-                                                                  SELF_TYPE, no_expr())),
+                                                                  SELF_TYPE, no_expr(), true)),
                                            single_Features(method(out_int, single_Formals(formal(arg, Int)),
-                                                                  SELF_TYPE, no_expr()))),
-                                   single_Features(method(in_string, nil_Formals(), Str, no_expr()))),
-                           single_Features(method(in_int, nil_Formals(), Int, no_expr()))),
+                                                                  SELF_TYPE, no_expr(), true))),
+                                   single_Features(method(in_string, nil_Formals(), Str, no_expr(), true))),
+                           single_Features(method(in_int, nil_Formals(), Int, no_expr(), true))),
                    filename)));
 
     //
@@ -167,16 +167,16 @@ void program_class::install_basic_classes() {
                                            append_Features(
                                                    single_Features(attr(val, Int, no_expr())),
                                                    single_Features(attr(str_field, prim_slot, no_expr()))),
-                                           single_Features(method(length, nil_Formals(), Int, no_expr()))),
+                                           single_Features(method(length, nil_Formals(), Int, no_expr(), true))),
                                    single_Features(method(concat,
                                                           single_Formals(formal(arg, Str)),
                                                           Str,
-                                                          no_expr()))),
+                                                          no_expr(), true))),
                            single_Features(method(substr,
                                                   append_Formals(single_Formals(formal(arg, Int)),
                                                                  single_Formals(formal(arg2, Int))),
                                                   Str,
-                                                  no_expr()))),
+                                                  no_expr(), true))),
                    filename)));
 }
 

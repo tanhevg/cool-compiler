@@ -11,6 +11,8 @@ public:
     virtual void before(tree_node* node)  {};
     virtual void after(tree_node* node)  {};
 
+    virtual void before(program_class* node)  {};
+
     virtual void before(class__class* node)  {};
     virtual void after(class__class* node)  {};
 

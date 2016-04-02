@@ -26,13 +26,24 @@ public:
     void code_ref(ostream &str);
     void code_store(ostream &str);
 
+    void code_load(ostream &str);
 };
 
 typedef SymbolTable<Symbol, ObjectEnvRecord> ObjectEnv;
 
+class ObjectEnvAttrVisitor: public TreeVisitor {
+private:
+    ObjectEnv &object_env;
+    int scope_index;
+public:
+    ObjectEnvAttrVisitor(ObjectEnv &_object_env): object_env(_object_env), scope_index(0){}
+    void after(attr_class *node);
+};
+
 class CodeGenerator: public TreeVisitor {
 private:
     ObjectEnv object_env; //todo need to delete the naked pointers
+    ClassTable *class_table;
     ostream &str;
     void binary_int_op(Binary_Expression_class *expr, char *opcode, int n_temp, Symbol result_type);
     void unary_int_op(Unary_Expression_class *expr, char *opcode, int n_temp);
@@ -40,8 +51,9 @@ private:
     int loop_count;
     int scope_index; // used for indexing attributes within a class, and formals of a method
 public:
-    CodeGenerator(ostream& _str):object_env(), str(_str), condition_count(0), loop_count(0), scope_index(0)
-                     {}
+    CodeGenerator(ClassTable *_class_table, ostream& _str):
+            class_table(_class_table), object_env(), str(_str), condition_count(0), loop_count(0), scope_index(0)
+            {}
 
     void before(class__class *node);
     void after(class__class *node);
@@ -49,7 +61,7 @@ public:
     void before(method_class *node);
     void after(method_class *node);
 
-    void after(attr_class *node);
+//    void after(attr_class *node);
     void after(formal_class *node);
 
     void code(assign_class *expr, int n_temp);
@@ -75,5 +87,7 @@ public:
     void code(int_const_class *expr, int n_temp);
     void code(string_const_class *expr, int n_temp);
     void code(bool_const_class *expr, int n_temp);
+
+    void before(program_class *node);
 };
 
