@@ -50,9 +50,13 @@ private:
     int condition_count;
     int loop_count;
     int scope_index; // used for indexing attributes within a class, and formals of a method
+    class__class *current_class;
+    method_class *current_method;
 public:
     CodeGenerator(ClassTable *_class_table, ostream& _str):
-            class_table(_class_table), object_env(), str(_str), condition_count(0), loop_count(0), scope_index(0)
+            class_table(_class_table), object_env(), str(_str),
+            condition_count(0), loop_count(0), scope_index(0),
+            current_class(nullptr), current_method(nullptr)
             {}
 
     void before(class__class *node);

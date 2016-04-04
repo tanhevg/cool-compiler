@@ -271,62 +271,62 @@ void CodeGenerator::unary_int_op(Unary_Expression_class *expr, char *opcode, int
 }
 
 void CodeGenerator::code(plus_class *expr, int n_temp) {
-    str << endl << "#\t'+'" << endl;
+    str << "#\t'+'" << endl;
     binary_int_op(expr, ADD, n_temp, Int);
 }
 
 void CodeGenerator::code(sub_class *expr, int n_temp) {
-    str << endl << "#\t'-'" << endl;
+    str << "#\t'-'" << endl;
     binary_int_op(expr, SUB, n_temp, Int);
 }
 
 void CodeGenerator::code(mul_class *expr, int n_temp) {
-    str << endl << "#\t'*'" << endl;
+    str << "#\t'*'" << endl;
     binary_int_op(expr, MUL, n_temp, Int);
 }
 
 void CodeGenerator::code(divide_class *expr, int n_temp) {
-    str << endl << "#\t'/'" << endl;
+    str << "#\t'/'" << endl;
     binary_int_op(expr, DIV, n_temp, Int);
 }
 
 void CodeGenerator::code(neg_class *expr, int n_temp) {
-    str << endl << "#\t'~'" << endl;
+    str << "#\t'~'" << endl;
     unary_int_op(expr, NEG, n_temp);
 }
 
 void CodeGenerator::code(lt_class *expr, int n_temp) {
-    str << endl << "#\t'<'" << endl;
+    str << "#\t'<'" << endl;
     binary_int_op(expr, SLT, n_temp, Bool);
 }
 
 void CodeGenerator::code(eq_class *expr, int n_temp) {
-    str << endl << "#\t'='" << endl;
+    str << "#\t'='" << endl;
     binary_int_op(expr, SEQ, n_temp, Bool);
 }
 
 void CodeGenerator::code(leq_class *expr, int n_temp) {
-    str << endl << "#\t'<='" << endl;
+    str << "#\t'<='" << endl;
     binary_int_op(expr, SLE, n_temp, Bool);
 }
 
 void CodeGenerator::code(comp_class *expr, int n_temp) {
-    str << endl << "#\t'!'" << endl;
+    str << "#\t'!'" << endl;
     unary_int_op(expr, NOT, n_temp);
 }
 
 void CodeGenerator::code(int_const_class *expr, int n_temp) {
-    str << endl << "#\tint const" << expr->get_token() << endl;
+    str << "#\tint const" << expr->get_token() << endl;
     emit_load_int(ACC, inttable.lookup_string(expr->get_token()->get_string()), str);
 }
 
 void CodeGenerator::code(string_const_class *expr, int n_temp) {
-    str << endl << "#\tString const" << expr->get_token() << endl;
+    str << "#\tString const" << expr->get_token() << endl;
     emit_load_string(ACC, stringtable.lookup_string(expr->get_token()->get_string()), str);
 }
 
 void CodeGenerator::code(bool_const_class *expr, int n_temp) {
-    str << endl << "#\tBoolean const" << endl;
+    str << "#\tBoolean const" << endl;
     emit_load_bool(ACC, BoolConst(expr->get_val()), str);
 }
 
@@ -337,7 +337,7 @@ void CodeGenerator::code(static_dispatch_class *expr, int n_temp) {
 //todo
 }
 void CodeGenerator::code(dispatch_class *expr, int n_temp) {
-    str << endl << "#\tcalling " << expr->get_name() << endl;
+    str << "#\tcalling " << expr->get_name() << endl;
     emit_push(FP,str);
     Expressions actuals = expr->get_actuals();
     for (int i = 0; i < actuals->len(); i++) {
@@ -376,7 +376,7 @@ void CodeGenerator::code(isvoid_class *expr, int n_temp) {
 //todo
 }
 void CodeGenerator::code(object_class *expr, int n_temp) {
-    str << endl << "#\tobject " << expr->get_name() << endl;
+    str << "#\tobject " << expr->get_name() << endl;
     object_env.lookup(expr->get_name())->code_load(str);
 }
 
@@ -402,6 +402,7 @@ void CodeGenerator::before(class__class *node) {
     ObjectEnvAttrVisitor attr_visitor = ObjectEnvAttrVisitor(object_env);
     class_table->visit_ordered_attrs_of_class(node->get_name(), &attr_visitor);
     str << "#\tstart of class " << node->get_name() << endl;
+    current_class = node;
 }
 
 void CodeGenerator::after(class__class *node) {
@@ -415,6 +416,7 @@ void CodeGenerator::before(method_class *node) {
     object_env.enterscope();
     scope_index = 1;
     str << "#\tstart of method " << node->get_name() << endl;
+    current_method = node;
 }
 
 void CodeGenerator::after(method_class *node) {
@@ -423,12 +425,15 @@ void CodeGenerator::after(method_class *node) {
     }
     Expression body = node->get_body();
     int tmp_count = body->get_temporaries_count();
+    str << current_class->get_name() << '.' << node->get_name() << ':' << endl;
     str << "#\tset up stack frame; number of temporaries = " << tmp_count << endl;
     emit_move(FP, SP, str);
     emit_push(RA, str);
     emit_push(SELF, str);
     emit_move(SELF, ACC, str);
-    emit_addiu(SP, SP, -4 * tmp_count, str);
+    if (tmp_count > 0) {
+        emit_addiu(SP, SP, -4 * tmp_count, str);
+    }
 
     // $fp points at return address; immediatelly below it is the saved previous self
     // therefore the space for the first available temporary is 2 words below $fp
@@ -445,7 +450,7 @@ void CodeGenerator::after(method_class *node) {
     emit_addiu(SP, SP, frame_size, str);
     str << "#\trestore previous $fp" << endl;
     emit_load(FP, 0, SP, str);
-    str << "#\treturn" << endl;
+    str << "#\treturn from " << current_class->get_name() << '.' << current_method->get_name() << endl;
     emit_return(str);
     object_env.exitscope();
 }
