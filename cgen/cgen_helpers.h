@@ -27,5 +27,6 @@ void emit_new(Symbol sym, ostream &str);
 void emit_push(char *reg, ostream &str);
 void emit_addiu(char *dest, char *src1, int imm, ostream &s);
 void emit_return(ostream &s);
+void emit_jalr(char *address, ostream &s);
 
 #endif //COOL_COMPILER_CGEN_HELPERS_H_H

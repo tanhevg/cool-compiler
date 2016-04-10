@@ -31,15 +31,6 @@ public:
 
 typedef SymbolTable<Symbol, ObjectEnvRecord> ObjectEnv;
 
-class ObjectEnvAttrVisitor: public TreeVisitor {
-private:
-    ObjectEnv &object_env;
-    int scope_index;
-public:
-    ObjectEnvAttrVisitor(ObjectEnv &_object_env): object_env(_object_env), scope_index(0){}
-    void after(attr_class *node);
-};
-
 class CodeGenerator: public TreeVisitor {
 private:
     ObjectEnv object_env; //todo need to delete the naked pointers

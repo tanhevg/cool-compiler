@@ -88,7 +88,8 @@ Symbol get_name();
 #define attr_EXTRAS	            		            	\
 void traverse_tree(TreeVisitor *visitor);        \
 Expression get_initializer();\
-Symbol get_type();
+Symbol get_type();\
+int get_temporaries_count() {return get_initializer() -> get_temporaries_count();}
 
 #define method_EXTRAS	            		            	\
 void traverse_tree(TreeVisitor *visitor);	            	\

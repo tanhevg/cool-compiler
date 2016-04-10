@@ -65,36 +65,17 @@ bool ClassTable::is_subtype(Symbol sub, Symbol super) {
     return false;
 }
 
-AttributeRecord *ClassTableRecord::get_attribute_record(Symbol s) {
-    auto it = attribute_by_name.find(s);
-    if (it == attribute_by_name.end()) {
-        return nullptr;
-    } else {
-        return it->second;
-    }
-}
-
-int ClassTable::get_attr_index(Symbol class_name, Symbol attr_name) {
-    do {
-        AttributeRecord *attribute_record = class_by_name[class_name]->get_attribute_record(attr_name);
-        if (attribute_record != nullptr) {
-            return attribute_record->get_index();
-        }
-        class_name = get_parent(class_name);
-    } while (class_name != No_class);
-    return -1;
-}
-
 void ClassTable::before(class__class *node) {
-    class_by_name[node->get_name()] = currentClassRecord = new ClassTableRecord(node, class_tag++);
+    class_by_name[node->get_name()] = current_class_record = new ClassTableRecord(node, class_tag++);
+    stringtable.add_string(node->get_name()->get_string());
 }
 
 void ClassTable::after(attr_class *node) {
-    currentClassRecord->add_attr(node);
+    current_class_record->add_attr(node);
 }
 
 ClassTableRecord::~ClassTableRecord() {
-    for (auto item : attribute_by_name) {
+    for (auto item : attribute_index) {
         delete item.second;
     }
 }
@@ -106,70 +87,72 @@ ClassTable::~ClassTable() {
 }
 
 void ClassTableRecord::add_attr(attr_class *attr) {
-    AttributeRecord *record = new AttributeRecord(attr);
-    attribute_by_name[attr->get_name()] = record;
+    attribute_index[attr->get_name()] = new IndexedRecord<attr_class>(attr);
 }
 
 int ClassTable::get_prototype_size(Symbol class_name) {
     return class_by_name[class_name]->get_prototype_size();
 }
 
-void ClassTable::visit_ordered_attrs_of_class(Symbol class_name, TreeVisitor *other) {
-    class_by_name[class_name]->visit_attributes_ordered(other);
-
-}
-
-void ClassTableRecord::visit_attributes_ordered(TreeVisitor *visitor) {
-    vector<AttributeRecord *> attr_records;
-    for (auto item : attribute_by_name) {
-        attr_records.push_back(item.second);
+void ClassTableRecord::index_features(int start_attr_idx, int start_method_idx) {
+    for (auto item : attribute_index) {
+        item.second->set_index(start_attr_idx++);
     }
-    sort(attr_records.begin(), attr_records.end(), [](AttributeRecord *a, AttributeRecord *b) {
-        return a->get_index() < b->get_index();
-    });
-    for (AttributeRecord *record : attr_records) {
-        record->get_attr()->traverse_tree(visitor);
-    }
-}
-
-void ClassTableRecord::index_attributes(int start_idx) {
-    for (auto item : attribute_by_name) {
-        item.second->set_index(start_idx++);
+    for (auto item : method_index) {
+        item.second->set_index(start_method_idx++);
     }
     indexed = true;
 }
 
-void ClassTable::index_attributes() {
+void ClassTable::index_features() {
     for (auto item : class_by_name) {
-        index_attributes_rec(item.first);
+        index_attributes_and_methods_rec(item.first);
     }
 }
 
-void ClassTableRecord::copy_attributes(ClassTableRecord *parent_record) {
-    for (auto attr : parent_record->attribute_by_name) {
-        attribute_by_name[attr.first] = attr.second;
+void ClassTableRecord::copy_features(ClassTableRecord *parent_record) {
+    for (auto attr : parent_record->attribute_index) {
+        attribute_index[attr.first] = attr.second;
+    }
+    for (auto method_idx : parent_record->method_index) {
+        method_index[method_idx.first] = method_idx.second;
     }
 }
 
-void ClassTable::index_attributes_rec(Symbol class_name) {
+void ClassTable::index_attributes_and_methods_rec(Symbol class_name) {
     ClassTableRecord *&class_table_record = class_by_name[class_name];
     if (class_table_record->is_indexed()) {
         return;
     }
     Symbol parent_name = class_table_record->get_class()->get_parent();
     if (parent_name != No_class) {
-        index_attributes_rec(parent_name);
+        index_attributes_and_methods_rec(parent_name);
         ClassTableRecord *&parent_record = class_by_name[parent_name];
         int start_index = parent_record->get_attribute_count() + 3;// space for class tag, object size and dispatch pointer
-        class_table_record->index_attributes(start_index);
-        class_table_record->copy_attributes(parent_record);
+        class_table_record->index_features(start_index, parent_record->get_method_count());
+        class_table_record->copy_features(parent_record);
     } else {
-        class_table_record->index_attributes(0);
+        class_table_record->index_features(0, 0);
     }
-
-
 }
 
 int ClassTable::get_class_tag(Symbol class_name) {
     return class_by_name[class_name]->get_class_tag();
+}
+
+int ClassTable::get_method_offset(Symbol class_name, Symbol method_name) {
+    return class_by_name[class_name]->get_method_offset(method_name);
+}
+
+void ClassTableRecord::add_method(method_class *method) {
+    method_index[method->get_name()] = new MethodRecord(method, cls->get_name());
+}
+
+
+void ClassTable::after(method_class *node) {
+    current_class_record->add_method(node);
+}
+
+int ClassTableRecord::get_method_offset(Symbol method_name) {
+    return method_index[method_name]->get_index();
 }

@@ -15,15 +15,15 @@ using std::vector;
 class class__class;
 class attr_class;
 
-class AttributeRecord {
+template<class T>
+class IndexedRecord {
 private:
-    attr_class *attr;
+    T *ref;
     int index;
-    friend class ClassTable;
 public:
-    AttributeRecord(attr_class * _attr): attr(_attr), index(-1) {}
-    attr_class* get_attr() {
-        return attr;
+    IndexedRecord(T *_ref): ref(_ref), index(-1) {}
+    T* get_ref() {
+        return ref;
     }
     int get_index() {
         return index;
@@ -33,21 +33,52 @@ public:
     }
 };
 
+
+class MethodRecord: public IndexedRecord<method_class> {
+private:
+    Symbol declaring_class;
+public:
+    MethodRecord(method_class *_ref, Symbol _declaring_class) :
+            IndexedRecord(_ref), declaring_class(_declaring_class) { }
+    Symbol get_declaring_class() {
+        return declaring_class;
+    }
+};
+
 class ClassTableRecord {
 private:
     Class_ cls;
     int prototype_size;
-    map<Symbol, AttributeRecord*> attribute_by_name;//todo use rvalue reference?
+    map<Symbol, IndexedRecord<attr_class> *> attribute_index;//todo use rvalue reference?
+    map<Symbol, MethodRecord *> method_index;
     int class_tag;
     bool indexed;
+    template <class T, typename F> void visit_ordered(map<Symbol, T *> &p_map, F lambda) {
+        vector<T *> records;
+        for (auto item : p_map) {
+            records.push_back(item.second);
+        }
+        sort(records.begin(), records.end(), [](auto a, auto b) {
+            return a->get_index() < b->get_index();
+        });
+        for (auto record : records) {
+            lambda(record);
+        }
+
+    }
+
+
 public:
     ClassTableRecord(Class_ _cls, int _class_tag):
-            attribute_by_name(), cls(_cls), class_tag(_class_tag), indexed(false) {}
+            attribute_index(), method_index(), cls(_cls), class_tag(_class_tag), indexed(false) {}
     int get_attribute_count() {
-        return (int) attribute_by_name.size();
+        return (int) attribute_index.size();
+    }
+    int get_method_count() {
+        return (int)method_index.size();
     }
     int get_prototype_size() {
-        return (int) (attribute_by_name.size() + 3); // space for class tag, object size and dispatch pointer
+        return (int) (attribute_index.size() + 3); // space for class tag, object size and dispatch pointer
     }
     Class_ get_class() {
         return cls;
@@ -58,40 +89,71 @@ public:
     bool is_indexed() {
         return indexed;
     }
-    AttributeRecord* get_attribute_record(Symbol s);
     void add_attr(attr_class *attr);
-    void visit_attributes_ordered(TreeVisitor *visitor);
-    void index_attributes(int start_idx);
+    void index_features(int start_attr_idx, int start_method_idx);
+    void add_method(method_class *method);
     virtual ~ClassTableRecord();
 
-    void copy_attributes(ClassTableRecord *parent);
+    void copy_features(ClassTableRecord *parent);
+    int get_method_offset(Symbol method_name);
+
+    template <typename F> void visit_attributes_ordered(F lambda) {
+        visit_ordered(attribute_index, lambda);
+    }
+    template <typename F> void visit_methods_ordered(F lambda) {
+        visit_ordered(method_index, lambda);
+    }
 };
 
 class ClassTable : public TreeVisitor {
     map<Symbol, ClassTableRecord*> class_by_name;
-    ClassTableRecord* currentClassRecord;
-    void index_attributes_rec(Symbol class_name);
+    ClassTableRecord* current_class_record;
+    void index_attributes_and_methods_rec(Symbol class_name);
     int class_tag;
 public:
     virtual ~ClassTable();
-    ClassTable() : class_by_name(), currentClassRecord(nullptr), class_tag(0) {}
+    ClassTable() : class_by_name(), current_class_record(nullptr), class_tag(0) {}
     Class_ get_class(Symbol s);
     Symbol get_parent(Symbol class_name);
     bool is_subtype(Symbol sub, Symbol super);
-    int get_attr_index(Symbol class_name, Symbol attr_name);
     int get_prototype_size(Symbol class_name);
 
     Symbol join(const vector<Symbol> &type1);
 
     void before(class__class *node);
     void after(attr_class *node);
+    void after(method_class *node);
 
-    void visit_ordered_attrs_of_class(Symbol class_name, TreeVisitor *other);
 
-    void index_attributes();
+    void index_features();
 
     int get_class_tag(Symbol class_name);
 
+    int get_method_offset(Symbol class_name, Symbol method_name);
+
+    template <typename F>
+    void visit_ordered_attrs_of_class(Symbol class_name, F lambda) {
+        class_by_name[class_name]->visit_attributes_ordered(lambda);
+    }
+
+    template <typename F>
+    void visit_ordered_methods_of_class(Symbol class_name, F lambda) {
+        class_by_name[class_name]->visit_methods_ordered(lambda);
+    }
+
+    template <typename F>
+    void visit_classes_ordered_by_tag(F lambda) {
+        vector<ClassTableRecord *> records;
+        for (auto r: class_by_name) {
+            records.push_back(r.second);
+        }
+        sort(records.begin(), records.end(), [](auto a, auto b) {
+            return a->get_class_tag() < b->get_class_tag();
+        });
+        for (auto r: records) {
+            lambda(r->get_class());
+        }
+    }
 };
 
 

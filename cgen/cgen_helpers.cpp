@@ -66,30 +66,6 @@ void emit_move(char *dest_reg, char *source_reg, ostream &s) {
     s << MOVE << dest_reg << " " << source_reg << endl;
 }
 
-//void emit_neg(char *dest, char *src1, ostream &s) { s << NEG << dest << " " << src1 << endl; }
-//
-//void emit_not(char *dest, char *src1, ostream &s) { s << NOT << dest << " " << src1 << endl; }
-//
-//void emit_add(char *dest, char *src1, char *src2, ostream &s) {
-//    s << ADD << dest << " " << src1 << " " << src2 << endl;
-//}
-//
-//void emit_slt(char *dest, char *src1, char *src2, ostream &s) {
-//    s << SLT << dest << " " << src1 << " " << src2 << endl;
-//}
-//
-//void emit_sle(char *dest, char *src1, char *src2, ostream &s) {
-//    s << SLE << dest << " " << src1 << " " << src2 << endl;
-//}
-//
-//void emit_seq(char *dest, char *src1, char *src2, ostream &s) {
-//    s << SEQ << dest << " " << src1 << " " << src2 << endl;
-//}
-//
-//static void emit_addu(char *dest, char *src1, char *src2, ostream &s) {
-//    s << ADDU << dest << " " << src1 << " " << src2 << endl;
-//}
-//
 void emit_addiu(char *dest, char *src1, int imm, ostream &s) {
     s << ADDIU << dest << " " << src1 << " " << imm << endl;
 }
@@ -110,7 +86,7 @@ static void emit_sll(char *dest, char *src1, int num, ostream &s) {
     s << SLL << dest << " " << src1 << " " << num << endl;
 }
 
-static void emit_jalr(char *dest, ostream &s) { s << JALR << "\t" << dest << endl; }
+void emit_jalr(char *dest, ostream &s) { s << JALR << dest << endl; }
 
 static void emit_jal(char *address, ostream &s) { s << JAL << address << endl; }
 

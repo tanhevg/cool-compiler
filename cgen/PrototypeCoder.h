@@ -11,23 +11,25 @@
 
 using std::ostream;
 
-class PrototypeAttrCoder: public TreeVisitor {
-    ostream& str;
-public:
-    PrototypeAttrCoder(ostream& _str): str(_str) {}
-    void before(attr_class *);
-
-};
-
 class PrototypeCoder: public TreeVisitor {
 private:
     ostream& str;
     ClassTable* classTable;
-    PrototypeAttrCoder attr_coder;
     void code_attr_rec(Symbol class_name, bool encode);
 public:
     PrototypeCoder(ostream& _str, ClassTable* _classTable):
-            str(_str), classTable(_classTable), attr_coder(_str) {}
+            str(_str), classTable(_classTable){}
+    void before(class__class *);
+
+};
+
+class DispTableCoder: public TreeVisitor {
+private:
+    ostream& str;
+    ClassTable *class_table;
+public:
+    DispTableCoder(ostream& _str, ClassTable* _classTable):
+            str(_str), class_table(_classTable){}
     void before(class__class *);
 
 };
