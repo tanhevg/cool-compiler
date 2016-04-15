@@ -7,10 +7,12 @@
 
 #include <map>
 #include <vector>
+#include <algorithm>
 #include "visitor.h"
 
 using std::map;
 using std::vector;
+using std::sort;
 
 class class__class;
 class attr_class;

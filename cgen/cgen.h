@@ -82,6 +82,7 @@ public:
     void code(int_const_class *expr, int n_temp);
     void code(string_const_class *expr, int n_temp);
     void code(bool_const_class *expr, int n_temp);
+    void code(no_expr_class *expr, int n_temp);
 
     void before(program_class *node);
 };

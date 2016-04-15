@@ -172,6 +172,8 @@ void CodeGenerator::code(let_class *expr, int n_temp) {
 
 void CodeGenerator::code(new__class *expr, int n_temp) {
     emit_new(expr->get_type(), str);
+    str << "\tjal\t" << expr->get_type() << "_init" << endl;
+
 }
 
 void CodeGenerator::code(isvoid_class *expr, int n_temp) {
@@ -215,9 +217,19 @@ void CodeGenerator::before(class__class *node) {
 void CodeGenerator::after(class__class *node) {
     str << "#\tinitializer for " << current_class->get_name() << endl;
     str << current_class->get_name() << "_init:" << endl;
-    class_table->visit_ordered_attrs_of_class(current_class->get_name(), [this](IndexedRecord<attr_class *>) {
-
-
+    emit_move(FP, SP, str);
+    emit_push(RA, str);
+    emit_push(SELF, str);
+    emit_move(SELF, ACC, str);
+    // todo code duplication with CodeGenerator::after(method_class *node) - extract to common function
+    // todo reserve space for temoporaries on stack - compute the number of temporaries required for class
+    class_table->visit_ordered_attrs_of_class(current_class->get_name(), [this](IndexedRecord<attr_class> *ar) {
+        // $fp points at return address; immediatelly below it is the saved previous self
+        // therefore the space for the first available temporary is 2 words below $fp
+        str << "#\tcode initializer body" << endl;
+        ar->get_ref()->get_initializer()->code(this, 2);
+        str << "#\tstore value returned by initializer in the attribute" << endl;
+        object_env.lookup(ar->get_ref()->get_name())->code_store(str);
     });
     object_env.exitscope();
 }
@@ -275,4 +287,10 @@ void CodeGenerator::after(method_class *node) {
 void CodeGenerator::after(formal_class *node) {
     object_env.addid(node->get_name(), stack_entry(node->get_type(), scope_index++));
 }
+
+void CodeGenerator::code(no_expr_class *expr, int n_temp) {
+    emit_move(ACC, ZERO, str);
+}
+
+
 

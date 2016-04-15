@@ -89,6 +89,7 @@ void isvoid_class::code(CodeGenerator *cgen, int n_temp) {
 }
 
 void no_expr_class::code(CodeGenerator *cgen, int n_temp) {
+    cgen->code(this, n_temp);
 }
 
 void object_class::code(CodeGenerator *cgen, int n_temp) {
