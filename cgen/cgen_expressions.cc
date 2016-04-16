@@ -22,11 +22,11 @@ static ObjectEnvRecord *heap_entry(Symbol declaring_type,
 void CodeGenerator::binary_int_op(Binary_Expression_class *expr, char *opcode, int n_temp, Symbol result_type) {
     str << "#\tcode the first operand of binary integer operator" << endl;
     expr->get_e1()->code(this, n_temp);
-    str << "#\tstore address of the first operand result in the temporary on the stack frame" << endl;
+    str << "#\tstore address of the first operand result in the temporary #" << n_temp << " on the stack frame" << endl;
     emit_store(ACC, n_temp, FP, str);
     str << "#\tcode the second operand of binary integer operator" << endl;
     expr->get_e2()->code(this, n_temp + 1);
-    str << "#\tload address of the first operand result into $t1" << endl;
+    str << "#\tload address of the first operand result into $t1 from temporary #" << n_temp << endl;
     emit_load(T1, n_temp, FP, str);
     // Both operands come in object form, therefore we need to fetch their values into respective registers to proceed
     str << "#\tfetch first operand value into $t1" << endl;
@@ -214,23 +214,56 @@ void CodeGenerator::before(class__class *node) {
     current_class = node;
 }
 
-void CodeGenerator::after(class__class *node) {
-    str << "#\tinitializer for " << current_class->get_name() << endl;
-    str << current_class->get_name() << "_init:" << endl;
+void CodeGenerator::emit_function_entry(int tmp_count) {
+    str << "#\tset up stack frame; number of temporaries = " << tmp_count << endl;
     emit_move(FP, SP, str);
     emit_push(RA, str);
     emit_push(SELF, str);
     emit_move(SELF, ACC, str);
-    // todo code duplication with CodeGenerator::after(method_class *node) - extract to common function
-    // todo reserve space for temoporaries on stack - compute the number of temporaries required for class
+    if (tmp_count > 0) {
+        emit_addiu(SP, SP, -4 * tmp_count, str);
+    }
+
+}
+
+void CodeGenerator::emit_function_exit(int tmp_count, int parameter_count) {
+    str << "#\tfunction exit: load return address from the frame" << endl;
+    emit_load(RA, 0, FP, str);
+    str << "#\trestore previous self" << endl;
+    emit_load(SELF, -4, FP, str);
+    int frame_size = 4 * parameter_count +
+                     4 * tmp_count +
+                     8; // return address and old self
+    str << "#\tpop the frame" << endl;
+    emit_addiu(SP, SP, frame_size, str);
+    str << "#\trestore previous $fp" << endl;
+    emit_load(FP, 0, SP, str);
+    str << "#\treturn from " << current_class->get_name();
+    if (current_method) {
+        str << '.' << current_method->get_name();
+    } else {
+        str << "_init";
+    }
+    str << endl;
+    emit_return(str);
+
+}
+
+//todo optimise out empty initializers and classes without initializers - already taken care of by prototype objects
+void CodeGenerator::after(class__class *node) {
+    current_method = nullptr;
+    int tmp_count = current_class->get_attr_temporaries_count();
+    str << current_class->get_name() << "_init:" << endl;
+    emit_function_entry(tmp_count);
     class_table->visit_ordered_attrs_of_class(current_class->get_name(), [this](IndexedRecord<attr_class> *ar) {
         // $fp points at return address; immediatelly below it is the saved previous self
         // therefore the space for the first available temporary is 2 words below $fp
-        str << "#\tcode initializer body" << endl;
+        str << "#\tcode initializer for " << ar->get_ref()->get_name() << endl;
         ar->get_ref()->get_initializer()->code(this, 2);
         str << "#\tstore value returned by initializer in the attribute" << endl;
         object_env.lookup(ar->get_ref()->get_name())->code_store(str);
     });
+    emit_function_exit(tmp_count, 0);
     object_env.exitscope();
 }
 
@@ -250,37 +283,13 @@ void CodeGenerator::after(method_class *node) {
     }
     Expression body = node->get_body();
     int tmp_count = body->get_temporaries_count();
-    str << current_class->get_name();
-    if (node->get_name()->get_string()[0] != '_') {
-        str << '.';
-    }
-    str << node->get_name() << ':' << endl;
-    str << "#\tset up stack frame; number of temporaries = " << tmp_count << endl;
-    emit_move(FP, SP, str);
-    emit_push(RA, str);
-    emit_push(SELF, str);
-    emit_move(SELF, ACC, str);
-    if (tmp_count > 0) {
-        emit_addiu(SP, SP, -4 * tmp_count, str);
-    }
-
+    str << current_class->get_name() << '.' << node->get_name() << ':' << endl;
+    emit_function_entry(tmp_count);
     // $fp points at return address; immediatelly below it is the saved previous self
     // therefore the space for the first available temporary is 2 words below $fp
     str << "#\tcode method body" << endl;
     body->code(this, 2);
-    str << "#\tload return address from the frame" << endl;
-    emit_load(RA, 0, FP, str);
-    str << "#\trestore previous self" << endl;
-    emit_load(SELF, -4, FP, str);
-    int frame_size = 4 * (scope_index - 1) +  // parameters
-                     4 * tmp_count +
-                     8; // return address and old self
-    str << "#\tpop the frame" << endl;
-    emit_addiu(SP, SP, frame_size, str);
-    str << "#\trestore previous $fp" << endl;
-    emit_load(FP, 0, SP, str);
-    str << "#\treturn from " << current_class->get_name() << '.' << current_method->get_name() << endl;
-    emit_return(str);
+    emit_function_exit(tmp_count, scope_index - 1);
     object_env.exitscope();
 }
 

@@ -72,6 +72,8 @@ void traverse_tree(TreeVisitor *visitor);        \
 void dump_with_types(ostream&,int);                    \
 Symbol get_name();										\
 Symbol get_parent();	        	                	\
+int get_attr_temporaries_count();\
+void set_attr_temporaries_count(int _temporaries_count);\
 Features get_features();
 
 

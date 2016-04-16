@@ -101,7 +101,7 @@ void TemporariesCounter::after(eq_class *node) { after_expr(node); }
 
 
 // -----
-
+// todo need to scan just the top level; no need to go too deep
 void MaxTemporariesCountVisitor::after_expr(Expression_class *node) {
     temporaries_count = max(temporaries_count, node->get_temporaries_count());
 }
@@ -149,4 +149,13 @@ void MaxTemporariesCountVisitor::after(neg_class *node) { after_expr(node); }
 void MaxTemporariesCountVisitor::after(eq_class *node) { after_expr(node); }
 
 
+void TemporariesCounter::after(class__class *node) {
+    MaxTemporariesCountVisitor counter;
+    node->get_features()->traverse_tree(&counter);
+    node->set_attr_temporaries_count(counter.get_temporaries_count());
 
+}
+
+void MaxTemporariesCountVisitor::after(attr_class *node) {
+    after_expr(node->get_initializer());
+}

@@ -55,13 +55,19 @@ public:
     virtual void after(eq_class *node) override;
 
     int get_temporaries_count() { return temporaries_count; }
+    
+    virtual void after(attr_class *node) override;
 
 private:
     void after_expr(Expression_class *node);
 };
+ 
 
 class TemporariesCounter : public TreeVisitor {
 public:
+    
+    virtual void after(class__class *node) override;
+    
     virtual void after(mul_class *node) override;
 
     virtual void after(divide_class *node) override;

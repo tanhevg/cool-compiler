@@ -43,6 +43,9 @@ private:
     int scope_index; // used for indexing attributes within a class, and formals of a method
     class__class *current_class;
     method_class *current_method;
+    void emit_function_entry(int tmp_count);
+    void emit_function_exit(int tmp_count, int parameter_count);
+
 public:
     CodeGenerator(ClassTable *_class_table, ostream& _str):
             class_table(_class_table), object_env(), str(_str),

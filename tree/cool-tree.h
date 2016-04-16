@@ -159,12 +159,14 @@ protected:
    Symbol parent;
    Features features;
    Symbol filename;
+    int temporaries_count;
 public:
    class__class(Symbol a1, Symbol a2, Features a3, Symbol a4) {
       name = a1;
       parent = a2;
       features = a3;
       filename = a4;
+       temporaries_count = 0;
    }
    Class_ copy_Class_();
    void dump(ostream& stream, int n);
