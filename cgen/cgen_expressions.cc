@@ -156,7 +156,19 @@ void CodeGenerator::code(dispatch_class *expr, int n_temp) {
 }
 
 void CodeGenerator::code(cond_class *expr, int n_temp) {
-//todo
+    str << "#\tconditional predicate" << endl;
+    expr->get_predicate()->code(this, n_temp);
+    str << "#\tconditional predicate: fetch boolean value from boolean object" << endl;
+    emit_fetch_int(ACC, ACC, str);
+    str << "#\tbranch to false lable if predicate is zero" << endl;
+    str << BEQZ << ACC << " " << "false" << condition_count << endl;
+    str << "#\ttrue (then) branch of the conditional" << endl;
+    expr->get_then()->code(this, n_temp);
+    str << "#\tjump to the end of the conditional after executing true (then) branch" << endl;
+    str << BRANCH << "condition_end" << condition_count << endl;
+    str << "false" << condition_count << ':' << endl;
+    expr->get_else()->code(this, n_temp);
+    str << "condition_end" << condition_count << ':' << endl;
 }
 
 void CodeGenerator::code(loop_class *expr, int n_temp) {
