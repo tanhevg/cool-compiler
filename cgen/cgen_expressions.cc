@@ -169,10 +169,20 @@ void CodeGenerator::code(cond_class *expr, int n_temp) {
     str << "false" << condition_count << ':' << endl;
     expr->get_else()->code(this, n_temp);
     str << "condition_end" << condition_count << ':' << endl;
+    condition_count++;
 }
 
 void CodeGenerator::code(loop_class *expr, int n_temp) {
-//todo
+    str << "loop_start" << loop_count << ':' << endl;
+    str << "#\tloop predicate" << endl;
+    expr->get_predicate()->code(this, n_temp);
+    str << "#\tloop predicate: fetch boolean value from boolean object" << endl;
+    emit_fetch_int(ACC, ACC, str);
+    str << BEQZ << ACC << " " << "loop_end" << loop_count << endl;
+    expr->get_body()->code(this, n_temp);
+    str << BRANCH << "loop_start" << loop_count << endl;
+    str << "loop_end" << loop_count << ':' << endl;
+    loop_count++;
 }
 
 void CodeGenerator::code(typcase_class *expr, int n_temp) {
