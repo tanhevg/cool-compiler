@@ -72,8 +72,6 @@ void traverse_tree(TreeVisitor *visitor);        \
 void dump_with_types(ostream&,int);                    \
 Symbol get_name();										\
 Symbol get_parent();	        	                	\
-int get_attr_temporaries_count();\
-void set_attr_temporaries_count(int _temporaries_count);\
 Features get_features();
 
 
@@ -186,6 +184,9 @@ Boolean get_val() { return val; }
 void code(CodeGenerator *cgen, int n_temp); \
 void traverse_tree(TreeVisitor *visitor);   \
 void dump_with_types(ostream&,int);
+
+#define no_expr_EXTRAS \
+virtual bool is_empty() { return true; }
 
 
 #endif

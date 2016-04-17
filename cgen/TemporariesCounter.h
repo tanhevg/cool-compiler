@@ -8,66 +8,9 @@
 
 #include <visitor.h>
 
-class MaxTemporariesCountVisitor : public TreeVisitor {
-private:
-    int temporaries_count;
-public:
-    MaxTemporariesCountVisitor() : temporaries_count(0) { }
-
-    virtual void after(mul_class *node) override;
-
-    virtual void after(divide_class *node) override;
-
-    virtual void after(plus_class *node) override;
-
-    virtual void after(sub_class *node) override;
-
-    virtual void after(assign_class *node) override;
-
-    virtual void after(dispatch_class *node) override;
-
-    virtual void after(static_dispatch_class *node) override;
-
-    virtual void after(cond_class *node) override;
-
-    virtual void after(block_class *node) override;
-
-    virtual void after(no_expr_class *node) override;
-
-    virtual void after(let_class *node) override;
-
-    virtual void after(branch_class *node) override;
-
-    virtual void after(typcase_class *node) override;
-
-    virtual void after(loop_class *node) override;
-
-    virtual void after(isvoid_class *node) override;
-
-    virtual void after(comp_class *node) override;
-
-    virtual void after(lt_class *node) override;
-
-    virtual void after(leq_class *node) override;
-
-    virtual void after(neg_class *node) override;
-
-    virtual void after(eq_class *node) override;
-
-    int get_temporaries_count() { return temporaries_count; }
-    
-    virtual void after(attr_class *node) override;
-
-private:
-    void after_expr(Expression_class *node);
-};
- 
-
 class TemporariesCounter : public TreeVisitor {
 public:
-    
-    virtual void after(class__class *node) override;
-    
+
     virtual void after(mul_class *node) override;
 
     virtual void after(divide_class *node) override;

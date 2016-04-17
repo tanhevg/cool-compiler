@@ -17,6 +17,9 @@
 
 #include "stringtab.h"
 #include "cool-io.h"
+#include <functional>
+
+using std::function;
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -131,7 +134,8 @@ public:
     virtual ~list_node() { }
     virtual int len() = 0;
     virtual Elem nth_length(int n, int &len) = 0;
-    virtual void traverse_tree(TreeVisitor *visitor);
+    virtual void traverse_tree(TreeVisitor *visitor) = 0;
+    virtual void traverse(function<void(Elem)> lambda) = 0;
 
     static list_node<Elem> *nil();
     static list_node<Elem> *single(Elem);
@@ -148,6 +152,8 @@ public:
     int len();
     Elem nth_length(int n, int &len);
     void dump(ostream& stream, int n);
+    virtual void traverse_tree(TreeVisitor *visitor) {};
+    virtual void traverse(function<void(Elem)> lambda) {}
 };
 
 template <class Elem> class single_list_node : public list_node<Elem> {
@@ -160,6 +166,12 @@ public:
     int len();
     Elem nth_length(int n, int &len);
     void dump(ostream& stream, int n);
+    virtual void traverse_tree(TreeVisitor *visitor) {
+        elem->traverse_tree(visitor);
+    }
+    virtual void traverse(function<void(Elem)> lambda) {
+        lambda(elem);
+    }
 };
 
 
@@ -176,6 +188,14 @@ public:
     Elem nth(int n);
     Elem nth_length(int n, int &len);
     void dump(ostream& stream, int n);
+    virtual void traverse_tree(TreeVisitor *visitor) {
+        some->traverse_tree(visitor);
+        rest->traverse_tree(visitor);
+    }
+    virtual void traverse(function<void(Elem)> lambda) {
+        some->traverse(lambda);
+        rest->traverse(lambda);
+    }
 };
 
 
@@ -431,14 +451,6 @@ template <class Elem> append_node<Elem> *cons(Elem x, list_node<Elem> *l)
 template <class Elem> append_node<Elem> *xcons(list_node<Elem> *l, Elem x)
 {
     return new append_node<Elem>(l, list(x));
-}
-
-template <class E> void list_node<E>::traverse_tree(TreeVisitor *visitor) { //todo re-work this using append_node
-//    visitor.before(this);
-    for(int i = this->first(); this->more(i); i = this->next(i)) {
-        this->nth(i)->traverse_tree(visitor);
-    }
-//    visitor.after(this);
 }
 
 #endif /* TREE_H */

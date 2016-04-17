@@ -84,6 +84,7 @@ public:
     Expression set_type(Symbol s) { type = s; return this; }
     virtual void dump_with_types(ostream&,int) = 0;
     virtual void code(CodeGenerator *cgen, int n_temp) = 0;
+    virtual bool is_empty() { return false;}
     void dump_type(ostream&, int);
     Expression_class() { type = (Symbol) NULL; temporaries_count = 0;}
     int get_temporaries_count() {return temporaries_count;}
@@ -159,14 +160,12 @@ protected:
    Symbol parent;
    Features features;
    Symbol filename;
-    int temporaries_count;
 public:
    class__class(Symbol a1, Symbol a2, Features a3, Symbol a4) {
       name = a1;
       parent = a2;
       features = a3;
       filename = a4;
-       temporaries_count = 0;
    }
    Class_ copy_Class_();
    void dump(ostream& stream, int n);

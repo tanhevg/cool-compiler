@@ -8,11 +8,13 @@
 #include <map>
 #include <vector>
 #include <algorithm>
+#include <functional>
 #include "visitor.h"
 
 using std::map;
 using std::vector;
 using std::sort;
+using std::function;
 
 class class__class;
 class attr_class;
@@ -35,6 +37,9 @@ public:
     }
 };
 
+//todo don't sort; rely on natural ordering
+
+typedef IndexedRecord<attr_class> AttrRecord;
 
 class MethodRecord: public IndexedRecord<method_class> {
 private:
@@ -55,7 +60,7 @@ private:
     map<Symbol, MethodRecord *> method_index;
     int class_tag;
     bool indexed;
-    template <class T, typename F> void visit_ordered(map<Symbol, T *> &p_map, F lambda) {
+    template <class T> void visit_ordered(map<Symbol, T *> &p_map, function<void(T*)> lambda) {
         vector<T *> records;
         for (auto item : p_map) {
             records.push_back(item.second);
@@ -99,10 +104,10 @@ public:
     void copy_features(ClassTableRecord *parent);
     int get_method_offset(Symbol method_name);
 
-    template <typename F> void visit_attributes_ordered(F lambda) {
+    void visit_attributes_ordered(function<void(AttrRecord *)> lambda) {
         visit_ordered(attribute_index, lambda);
     }
-    template <typename F> void visit_methods_ordered(F lambda) {
+    void visit_methods_ordered(function<void(MethodRecord *)> lambda) {
         visit_ordered(method_index, lambda);
     }
 };
@@ -133,18 +138,15 @@ public:
 
     int get_method_offset(Symbol class_name, Symbol method_name);
 
-    template <typename F>
-    void visit_ordered_attrs_of_class(Symbol class_name, F lambda) {
+    void visit_ordered_attrs_of_class(Symbol class_name, function<void(AttrRecord *)> lambda) {
         class_by_name[class_name]->visit_attributes_ordered(lambda);
     }
 
-    template <typename F>
-    void visit_ordered_methods_of_class(Symbol class_name, F lambda) {
+    void visit_ordered_methods_of_class(Symbol class_name, function<void(MethodRecord *)> lambda) {
         class_by_name[class_name]->visit_methods_ordered(lambda);
     }
 
-    template <typename F>
-    void visit_classes_ordered_by_tag(F lambda) {
+    void visit_classes_ordered_by_tag(function<void(Class_)> lambda) {
         vector<ClassTableRecord *> records;
         for (auto r: class_by_name) {
             records.push_back(r.second);

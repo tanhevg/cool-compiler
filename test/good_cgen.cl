@@ -18,7 +18,10 @@ class C {
 class D inherits C {
     c: String;
     d():Int {
-        5 + 2 * 3
+        {
+        7+1;
+        5 + 2 * 3;
+        }
     };
 };
 

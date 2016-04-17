@@ -4,6 +4,9 @@
 #include "cgen_helpers.h"
 
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#pragma clang diagnostic ignored "-Wwritable-strings"
 static ObjectEnvRecord *stack_entry(Symbol declaring_type, int offset) {
     return new ObjectEnvRecord(declaring_type, FP, offset);
 }
@@ -159,11 +162,11 @@ void CodeGenerator::code(typcase_class *expr, int n_temp) {
 //todo
 }
 
-void CodeGenerator::code(block_class *expr, int n_temp) {
-    Expressions body = expr->get_body();
-    for (int i = 0; i < body->len(); i++) { // todo revisit
-        body->nth(i)->code(this, n_temp);
-    }
+void CodeGenerator::code(block_class *block, int n_temp) {
+    Expressions body = block->get_body();
+    body->traverse([this](Expression expr) {
+        expr->code(this, n_temp);
+    });
 }
 
 void CodeGenerator::code(let_class *expr, int n_temp) {
@@ -249,13 +252,27 @@ void CodeGenerator::emit_function_exit(int tmp_count, int parameter_count) {
 
 }
 
-//todo optimise out empty initializers and classes without initializers - already taken care of by prototype objects
 void CodeGenerator::after(class__class *node) {
     current_method = nullptr;
-    int tmp_count = current_class->get_attr_temporaries_count();
+    int tmp_count = 0;
+    bool is_empty = true;
+    class_table->visit_ordered_attrs_of_class(current_class->get_name(), [&tmp_count, &is_empty](AttrRecord *ar) {
+        if (ar->get_ref()->get_temporaries_count() > tmp_count) {
+            tmp_count = ar->get_ref()->get_temporaries_count();
+        }
+        is_empty &= ar->get_ref()->get_initializer()->is_empty();
+    });
     str << current_class->get_name() << "_init:" << endl;
+    if (is_empty) {
+        str << "#\tall attribute initializers are empty; return straight away" << endl;
+        emit_return(str);
+        return;
+    }
     emit_function_entry(tmp_count);
     class_table->visit_ordered_attrs_of_class(current_class->get_name(), [this](IndexedRecord<attr_class> *ar) {
+        if (ar->get_ref()->get_initializer()->is_empty()) {
+            return;
+        }
         // $fp points at return address; immediatelly below it is the saved previous self
         // therefore the space for the first available temporary is 2 words below $fp
         str << "#\tcode initializer for " << ar->get_ref()->get_name() << endl;
@@ -274,7 +291,6 @@ void CodeGenerator::before(method_class *node) {
     object_env.enterscope();
     scope_index = 1;
     current_method = node;
-    str << "#\tstart of method " << current_class->get_name() << '.' << node->get_name() << endl;
 }
 
 void CodeGenerator::after(method_class *node) {
@@ -303,3 +319,5 @@ void CodeGenerator::code(no_expr_class *expr, int n_temp) {
 
 
 
+
+#pragma clang diagnostic pop

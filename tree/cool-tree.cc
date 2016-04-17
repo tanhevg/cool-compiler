@@ -681,14 +681,6 @@ Features class__class::get_features()
     return features;
 }
 
-int class__class::get_attr_temporaries_count() {
-    return temporaries_count;
-}
-
-void class__class::set_attr_temporaries_count(int _temporaries_count) {
-    temporaries_count = _temporaries_count;
-}
-
 Symbol attr_class::get_name()
 {
    return name;
