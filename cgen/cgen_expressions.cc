@@ -307,6 +307,8 @@ void CodeGenerator::after(class__class *node) {
         str << "#\tstore value returned by initializer in the attribute" << endl;
         object_env.lookup(ar->get_ref()->get_name())->code_store(str);
     });
+    str << "#\trestore self in $a0" << endl;
+    emit_move(ACC, SELF, str);
     emit_function_exit(tmp_count, 0);
     object_env.exitscope();
 }
