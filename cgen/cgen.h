@@ -45,6 +45,7 @@ private:
     method_class *current_method;
     void emit_function_entry(int tmp_count);
     void emit_function_exit(int tmp_count, int parameter_count);
+    void dispatch(Expression callee, Symbol type, Symbol name, Expressions actuals, int n_temp);
 
 public:
     CodeGenerator(ClassTable *_class_table, ostream& _str):
@@ -58,9 +59,9 @@ public:
 
     void before(method_class *node);
     void after(method_class *node);
-
-//    void after(attr_class *node);
     void after(formal_class *node);
+
+    void before(program_class *node);
 
     void code(assign_class *expr, int n_temp);
     void code(static_dispatch_class *expr, int n_temp);
@@ -87,6 +88,5 @@ public:
     void code(bool_const_class *expr, int n_temp);
     void code(no_expr_class *expr, int n_temp);
 
-    void before(program_class *node);
 };
 

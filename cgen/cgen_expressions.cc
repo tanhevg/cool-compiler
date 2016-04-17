@@ -118,17 +118,14 @@ void CodeGenerator::code(bool_const_class *expr, int n_temp) {
 }
 
 void CodeGenerator::code(assign_class *expr, int n_temp) {
-//todo
+    expr->get_expr()->code(this, n_temp);
+    str << "#\tAssign to " << expr->get_name() << endl;
+    object_env.lookup(expr->get_name())->code_store(str);
 }
 
-void CodeGenerator::code(static_dispatch_class *expr, int n_temp) {
-//todo
-}
-
-void CodeGenerator::code(dispatch_class *expr, int n_temp) {
-    str << "#\tcalling " << expr->get_name() << endl;
+void CodeGenerator::dispatch(Expression callee, Symbol type, Symbol name, Expressions actuals, int n_temp) {
+    str << "#\tcalling " << name << endl;
     emit_push(FP, str);
-    Expressions actuals = expr->get_actuals();
     for (int i = 0; i < actuals->len(); i++) {
         int idx = actuals->len() - i - 1;
         str << "#\tcoding actual parameter #" << idx << endl;
@@ -136,18 +133,26 @@ void CodeGenerator::code(dispatch_class *expr, int n_temp) {
         emit_push(ACC, str);
     }
     str << "#\tcallee object" << endl;
-    Expression callee = expr->get_callee();
     callee->code(this, n_temp);
     str << "#\tload pointer to dispatch table into $t1" << endl;
     emit_load(T1, 2, ACC, str);
-    int method_offset = class_table->get_method_offset(callee->get_type(), expr->get_name());
+    int method_offset = class_table->get_method_offset(type, name);
     if (method_offset > 0) {
-        str << "#\tload address of method " << expr->get_name() << " into $t1" << endl;
+        str << "#\tload address of method " << name << " into $t1" << endl;
         emit_load(T1, method_offset, T1, str);
     } else {
-        str << "#\tmethod " << expr->get_name() << " has offset 0" << endl;
+        str << "#\tmethod " << name << " has offset 0" << endl;
     }
     emit_jalr(T1, str);
+
+}
+
+void CodeGenerator::code(static_dispatch_class *expr, int n_temp) {
+    dispatch(expr->get_callee(), expr->get_type_name(), expr->get_name(), expr->get_actuals(), n_temp);
+}
+
+void CodeGenerator::code(dispatch_class *expr, int n_temp) {
+    dispatch(expr->get_callee(), expr->get_type(), expr->get_name(), expr->get_actuals(), n_temp);
 }
 
 void CodeGenerator::code(cond_class *expr, int n_temp) {
