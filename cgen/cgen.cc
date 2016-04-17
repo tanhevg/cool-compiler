@@ -27,6 +27,7 @@
 #include "cgen_helpers.h"
 #include "PrototypeCoder.h"
 #include "TemporariesCounter.h"
+#include "emit.h"
 
 extern void emit_string_constant(ostream &str, char *s);
 
@@ -134,6 +135,8 @@ void program_class::cgen(ostream &os) {
 
     if (cgen_debug) cout << "coding global text" << endl;
     code_global_text(os);
+    os << "main:" << endl;
+    os << JUMP << "__start" << endl;
 
     CodeGenerator codeGen(classtable, os);
     traverse_tree(&codeGen);
@@ -206,6 +209,7 @@ void code_global_text(ostream &str) {
     << HEAP_START << LABEL
     << WORD << 0 << endl
     << "\t.text" << endl
+    << "\t.align 2" << endl
     << GLOBAL;
     emit_init_ref(idtable.add_string("Main"), str);
     str << endl << GLOBAL;
@@ -216,6 +220,8 @@ void code_global_text(ostream &str) {
     emit_init_ref(idtable.add_string("Bool"), str);
     str << endl << GLOBAL;
     emit_method_ref(idtable.add_string("Main"), idtable.add_string("main"), str);
+    str << endl << GLOBAL;
+    str << "\tmain";
     str << endl;
 }
 

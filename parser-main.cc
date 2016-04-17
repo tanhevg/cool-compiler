@@ -17,12 +17,13 @@
 #include "cool-tree.h"
 
 #include "cool-parse.h"
-#include "semant/semant.h"
+#include <string>
 
 
 using std::unique_ptr;
 using std::function;
 using std::default_delete;
+using std::string;
 
 //
 // These globals keep everything working.
@@ -62,8 +63,9 @@ int main(int argc, char *argv[]) {
     cool_yyparse();
     stream_ptr out(&cout, [](ostream *) { });
     if (out_filename) {
-        cout << "Writing to file " << out_filename << endl;
-        out = stream_ptr(new ofstream(out_filename), default_delete<ostream>());
+        string ast_filename = string(out_filename) + string(".ast");
+        cout << "Writing AST to file " << ast_filename << endl;
+        out = stream_ptr(new ofstream(ast_filename), default_delete<ostream>());
     }
     if (!ast_root) {
         cerr << "ast_root is null\n";
@@ -78,6 +80,11 @@ int main(int argc, char *argv[]) {
     if (ret) {
         return ret;
     }
-    ast_root->cgen(cout);
+    if (out_filename) {
+        string asm_filename = string(out_filename) + string(".asm");
+        cout << "Writing code to file " << asm_filename << endl;
+        out = stream_ptr(new ofstream(asm_filename), default_delete<ostream>());
+    }
+    ast_root->cgen(*out);
 }
 

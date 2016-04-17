@@ -86,6 +86,7 @@
 //
 #define JALR  "\tjalr\t"
 #define JAL   "\tjal\t"
+#define JUMP  "\tj\t"
 #define RET   "\tjr\t$ra\t"
 
 #define SW    "\tsw\t"
