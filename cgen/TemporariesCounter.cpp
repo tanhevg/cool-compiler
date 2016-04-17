@@ -25,11 +25,11 @@ static int max_tmp_count(Cases cases) {
 }
 
 void TemporariesCounter::after(dispatch_class *node) {
-    node->set_temporaries_count(max_tmp_count(node->get_actuals()));
+    node->set_temporaries_count(max(node->get_callee()->get_temporaries_count(), max_tmp_count(node->get_actuals())));
 }
 
 void TemporariesCounter::after(static_dispatch_class *node) {
-    node->set_temporaries_count(max_tmp_count(node->get_actuals()));
+    node->set_temporaries_count(max(node->get_callee()->get_temporaries_count(), max_tmp_count(node->get_actuals())));
 }
 
 void TemporariesCounter::after(cond_class *node) {
