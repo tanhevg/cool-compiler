@@ -152,7 +152,7 @@ void CodeGenerator::code(static_dispatch_class *expr, int n_temp) {
 }
 
 void CodeGenerator::code(dispatch_class *expr, int n_temp) {
-    dispatch(expr->get_callee(), expr->get_type(), expr->get_name(), expr->get_actuals(), n_temp);
+    dispatch(expr->get_callee(), expr->get_callee()->get_type(), expr->get_name(), expr->get_actuals(), n_temp);
 }
 
 void CodeGenerator::code(cond_class *expr, int n_temp) {
@@ -181,7 +181,7 @@ void CodeGenerator::code(typcase_class *expr, int n_temp) {
 
 void CodeGenerator::code(block_class *block, int n_temp) {
     Expressions body = block->get_body();
-    body->traverse([this](Expression expr) {
+    body->traverse([this, n_temp](Expression expr) {
         expr->code(this, n_temp);
     });
 }
