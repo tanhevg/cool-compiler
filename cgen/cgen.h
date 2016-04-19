@@ -24,9 +24,9 @@ public:
     char* get_reg() {return reg;}
     int get_offset() {return offset;}
     void code_ref(ostream &str);
-    void code_store(ostream &str);
+    ostream & code_store(ostream &str);
 
-    void code_load(ostream &str);
+    ostream & code_load(ostream &str);
 };
 
 typedef SymbolTable<Symbol, ObjectEnvRecord> ObjectEnv;
@@ -36,8 +36,10 @@ private:
     ObjectEnv object_env; //todo need to delete the naked pointers
     ClassTable *class_table;
     ostream &str;
-    void binary_int_op(Binary_Expression_class *expr, char *opcode, int n_temp, Symbol result_type);
-    void unary_int_op(Unary_Expression_class *expr, char *opcode, int n_temp);
+    void binary_int_bool_op(Binary_Expression_class *expr, char *opcode, const char *op_string, int n_temp,
+                            Symbol result_type);
+    void unary_int_bool_op(Unary_Expression_class *expr, char *opcode, const char *op_string, int n_temp,
+                               Symbol result_type);
     int condition_count;
     int loop_count;
     int scope_index; // used for indexing attributes within a class, and formals of a method

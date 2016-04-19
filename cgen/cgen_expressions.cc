@@ -1,7 +1,10 @@
 #include <cool-tree.h>
 #include <extern_symbols.h>
+#include <string>
 #include "cgen.h"
 #include "cgen_helpers.h"
+
+using std::string;
 
 
 #pragma clang diagnostic push
@@ -22,128 +25,102 @@ static ObjectEnvRecord *heap_entry(Symbol declaring_type,
  * Temporary objects are created on heap for result of each expression
  * Expression result in $a0 is the address of the newly created object on the heap
  */
-void CodeGenerator::binary_int_op(Binary_Expression_class *expr, char *opcode, int n_temp, Symbol result_type) {
-    str << "#\tcode the first operand of binary integer operator" << endl;
+void CodeGenerator::binary_int_bool_op(Binary_Expression_class *expr, char *opcode, const char *op_string, int n_temp,
+                                       Symbol result_type) {
     expr->get_e1()->code(this, n_temp);
-    str << "#\tstore address of the first operand result in the temporary #" << n_temp << " on the stack frame" << endl;
-    emit_store(ACC, n_temp, FP, str);
-    str << "#\tcode the second operand of binary integer operator" << endl;
+    emit_store(ACC, -n_temp, FP, str)                << "\t# store address of the first operand of "
+                                                    << op_string << " in temporary " << n_temp << endl;
     expr->get_e2()->code(this, n_temp + 1);
-    str << "#\tload address of the first operand result into $t1 from temporary #" << n_temp << endl;
-    emit_load(T1, n_temp, FP, str);
+    emit_load(T1, -n_temp, FP, str)                  << "\t# load address of the first operand result of "
+                                                    << op_string << " from temporary " << n_temp << endl;
     // Both operands come in object form, therefore we need to fetch their values into respective registers to proceed
-    str << "#\tfetch first operand value into $t1" << endl;
-    emit_fetch_int(T1, T1, str);
-    str << "#\tfetch second operand value into $t2" << endl;
-    emit_fetch_int(T2, ACC, str);
-    str << "#\tcode the operation; use $t5 because $t1-$t4 are clobbered by Object.copy" << endl;
-    str << opcode << T5 << " " << T1 << " " << T2 << endl;
-    str << "#\tcreate (new) the result on the heap" << endl;
-    emit_new(result_type, str);
-    str << "#\tstore the operation value" << endl;
-    emit_store_int(T5, ACC, str);
+    emit_fetch_int(T1, T1, str)                     << "\t# fetch first operand value" << endl;
+    emit_fetch_int(T2, ACC, str)                    << "\t# fetch second operand value" << endl;
+    str << opcode << T5 << " " << T1 << " " << T2   << "\t# code " << op_string
+                                                    << "; use $t5 because $t1-$t4 are clobbered by Object.copy" << endl;
+    emit_new(result_type, str)                      << "\t# create (new) the result of " << op_string << " on the heap" << endl;
+    emit_store_int(T5, ACC, str)                    << "\t# store the " << op_string << " value" << endl;
 }
 
-void CodeGenerator::unary_int_op(Unary_Expression_class *expr, char *opcode, int n_temp) {
-    str << "#\tcode the operand of unary integer operator" << endl;
+void CodeGenerator::unary_int_bool_op(Unary_Expression_class *expr, char *opcode, const char *op_string, int n_temp,
+                                      Symbol result_type) {
     expr->get_e1()->code(this, n_temp);
-    str << "#\tfetch first operand value into $t1" << endl;
-    emit_fetch_int(T1, ACC, str);
-    str << "#\tcode the operation; use $t5 because $t1-$t4 are clobbered by Object.copy" << endl;
-    str << opcode << T5 << " " << T1 << endl;
-    str << "#\tcreate (new) the result on the heap" << endl;
-    emit_new(Int, str);
-    str << "#\tstore the operation value" << endl;
-    emit_store_int(T5, ACC, str);
+    emit_fetch_int(T1, ACC, str)        << "\t# fetch value of first operand of " << op_string << endl;
+    str << opcode << T5 << " " << T1    << "\t# code " << op_string
+                                        << "; use $t5 because $t1-$t4 are clobbered by Object.copy" << endl;;
+    emit_new(result_type, str)          << "\t# create (new) the result of " << op_string << " on the heap" << endl;
+    emit_store_int(T5, ACC, str)        << "\t# store the " << op_string << " value" << endl;
 }
 
 void CodeGenerator::code(plus_class *expr, int n_temp) {
-    str << "#\t'+'" << endl;
-    binary_int_op(expr, ADD, n_temp, Int);
+    binary_int_bool_op(expr, ADD, "'+'", n_temp, Int);
 }
 
 void CodeGenerator::code(sub_class *expr, int n_temp) {
-    str << "#\t'-'" << endl;
-    binary_int_op(expr, SUB, n_temp, Int);
+    binary_int_bool_op(expr, SUB, "'-'", n_temp, Int);
 }
 
 void CodeGenerator::code(mul_class *expr, int n_temp) {
-    str << "#\t'*'" << endl;
-    binary_int_op(expr, MUL, n_temp, Int);
+    binary_int_bool_op(expr, MUL, "'*'", n_temp, Int);
 }
 
 void CodeGenerator::code(divide_class *expr, int n_temp) {
-    str << "#\t'/'" << endl;
-    binary_int_op(expr, DIV, n_temp, Int);
+    binary_int_bool_op(expr, DIV, "'/'", n_temp, Int);
 }
 
 void CodeGenerator::code(neg_class *expr, int n_temp) {
-    str << "#\t'~'" << endl;
-    unary_int_op(expr, NEG, n_temp);
+    unary_int_bool_op(expr, NEG, "'~'", n_temp, Int);
 }
 
 void CodeGenerator::code(lt_class *expr, int n_temp) {
-    str << "#\t'<'" << endl;
-    binary_int_op(expr, SLT, n_temp, Bool);
+    binary_int_bool_op(expr, SLT, "'<'", n_temp, Bool);
 }
 
 void CodeGenerator::code(eq_class *expr, int n_temp) {
-    str << "#\t'='" << endl;
-    binary_int_op(expr, SEQ, n_temp, Bool);
+    binary_int_bool_op(expr, SEQ, "'='", n_temp, Bool);
 }
 
 void CodeGenerator::code(leq_class *expr, int n_temp) {
-    str << "#\t'<='" << endl;
-    binary_int_op(expr, SLE, n_temp, Bool);
+    binary_int_bool_op(expr, SLE, "'<='", n_temp, Bool);
 }
 
 void CodeGenerator::code(comp_class *expr, int n_temp) {
-    str << "#\t'!'" << endl;
-    unary_int_op(expr, NOT, n_temp);
+    unary_int_bool_op(expr, NOT, "'not'", n_temp, Bool);
 }
 
 void CodeGenerator::code(int_const_class *expr, int n_temp) {
-    str << "#\tint const " << expr->get_token() << endl;
-    emit_load_int(ACC, inttable.lookup_string(expr->get_token()->get_string()), str);
+    emit_load_int(ACC, inttable.lookup_string(expr->get_token()->get_string()), str)
+    << "\t# load int const " << expr->get_token() << endl;
 }
 
 void CodeGenerator::code(string_const_class *expr, int n_temp) {
-    str << "#\tString const " << expr->get_token() << endl;
-    emit_load_string(ACC, stringtable.lookup_string(expr->get_token()->get_string()), str);
+    emit_load_string(ACC, stringtable.lookup_string(expr->get_token()->get_string()), str)
+    << "\t# load string const " << expr->get_token() << endl;
 }
 
 void CodeGenerator::code(bool_const_class *expr, int n_temp) {
-    str << "#\tBoolean const" << endl;
-    emit_load_bool(ACC, BoolConst(expr->get_val()), str);
+    emit_load_bool(ACC, BoolConst(expr->get_val()), str)        << "\t# load boolean const" << endl;
 }
 
 void CodeGenerator::code(assign_class *expr, int n_temp) {
     expr->get_expr()->code(this, n_temp);
-    str << "#\tAssign to " << expr->get_name() << endl;
-    object_env.lookup(expr->get_name())->code_store(str);
+    object_env.lookup(expr->get_name())->code_store(str)        << "\t # assign to " << expr->get_name() << endl;
 }
 
 void CodeGenerator::dispatch(Expression callee, Symbol type, Symbol name, Expressions actuals, int n_temp) {
-    str << "#\tcalling " << name << endl;
-    emit_push(FP, str);
+    emit_push(FP, str)                          << "\t# store old frame pointer before calling " << type << '.' << name << endl;
     for (int i = 0; i < actuals->len(); i++) {
         int idx = actuals->len() - i - 1;
-        str << "#\tcoding actual parameter #" << idx << endl;
         actuals->nth(idx)->code(this, n_temp);
-        emit_push(ACC, str);
+        emit_push(ACC, str)                     << "\t# push actual parameter #" << idx << " of " << type << '.' << name << endl;
     }
-    str << "#\tcallee object" << endl;
     callee->code(this, n_temp);
-    str << "#\tload pointer to dispatch table into $t1" << endl;
-    emit_load(T1, 2, ACC, str);
+    emit_load(T1, 2, ACC, str)                  << "\t# load pointer to dispatch table" << endl;
     int method_offset = class_table->get_method_offset(type, name);
     if (method_offset > 0) {
-        str << "#\tload address of method " << name << " into $t1" << endl;
-        emit_load(T1, method_offset, T1, str);
-    } else {
-        str << "#\tmethod " << name << " has offset 0" << endl;
+        emit_load(T1, method_offset, T1, str)   << "\t# load address of " << type << '.' << name << endl;
     }
-    emit_jalr(T1, str);
+    emit_jalr(T1, str)                          << "\t# call " << type << '.' << name << endl;
 
 }
 
@@ -156,16 +133,11 @@ void CodeGenerator::code(dispatch_class *expr, int n_temp) {
 }
 
 void CodeGenerator::code(cond_class *expr, int n_temp) {
-    str << "#\tconditional predicate" << endl;
     expr->get_predicate()->code(this, n_temp);
-    str << "#\tconditional predicate: fetch boolean value from boolean object" << endl;
-    emit_fetch_int(ACC, ACC, str);
-    str << "#\tbranch to false lable if predicate is zero" << endl;
-    str << BEQZ << ACC << " " << "false" << condition_count << endl;
-    str << "#\ttrue (then) branch of the conditional" << endl;
+    emit_fetch_int(ACC, ACC, str)                           << "\t# conditional predicate: fetch boolean value from boolean object" << endl;
+    str << BEQZ << ACC << " " << "false" << condition_count << "\t# branch to false lable if predicate is zero" << endl;
     expr->get_then()->code(this, n_temp);
-    str << "#\tjump to the end of the conditional after executing true (then) branch" << endl;
-    str << BRANCH << "condition_end" << condition_count << endl;
+    str << BRANCH << "condition_end" << condition_count     << "\t# jump to the end of the conditional after executing true (then) branch" << endl;
     str << "false" << condition_count << ':' << endl;
     expr->get_else()->code(this, n_temp);
     str << "condition_end" << condition_count << ':' << endl;
@@ -174,10 +146,8 @@ void CodeGenerator::code(cond_class *expr, int n_temp) {
 
 void CodeGenerator::code(loop_class *expr, int n_temp) {
     str << "loop_start" << loop_count << ':' << endl;
-    str << "#\tloop predicate" << endl;
     expr->get_predicate()->code(this, n_temp);
-    str << "#\tloop predicate: fetch boolean value from boolean object" << endl;
-    emit_fetch_int(ACC, ACC, str);
+    emit_fetch_int(ACC, ACC, str)    << "\t# loop predicate: fetch boolean value from boolean object" << endl;
     str << BEQZ << ACC << " " << "loop_end" << loop_count << endl;
     expr->get_body()->code(this, n_temp);
     str << BRANCH << "loop_start" << loop_count << endl;
@@ -201,8 +171,10 @@ void CodeGenerator::code(let_class *expr, int n_temp) {
 }
 
 void CodeGenerator::code(new__class *expr, int n_temp) {
-    emit_new(expr->get_type(), str);
-    str << "\tjal\t" << expr->get_type() << "_init" << endl;
+    emit_new(expr->get_type_name(), str)                << "\t# new " << expr->get_type_name() << "()" << endl;
+    emit_push(FP, str)                                  << "\t# store old frame pointer before calling new "
+                                                        << expr->get_type_name() << "()" << endl;
+    str << "\tjal\t" << expr->get_type() << "_init"     << "\t# jump to initializer of " << expr->get_type_name() << endl;
 
 }
 
@@ -211,8 +183,11 @@ void CodeGenerator::code(isvoid_class *expr, int n_temp) {
 }
 
 void CodeGenerator::code(object_class *expr, int n_temp) {
-    str << "#\tobject " << expr->get_name() << endl;
-    object_env.lookup(expr->get_name())->code_load(str);
+    if (self == expr->get_name()) { //todo
+        emit_move(ACC, SELF, str)                               << "\t# object " << expr->get_name() << endl;
+    } else {
+        object_env.lookup(expr->get_name())->code_load(str)     << "\t# object " << expr->get_name() << endl;
+    }
 }
 
 
@@ -220,12 +195,12 @@ void ObjectEnvRecord::code_ref(ostream &str) {
     str << offset * WORD_SIZE << "(" << reg << ")";
 }
 
-void ObjectEnvRecord::code_store(ostream &str) {
-    emit_store(ACC, offset, reg, str);
+ostream & ObjectEnvRecord::code_store(ostream &str) {
+    return emit_store(ACC, offset, reg, str);
 }
 
-void ObjectEnvRecord::code_load(ostream &str) {
-    emit_load(ACC, offset, reg, str);
+ostream & ObjectEnvRecord::code_load(ostream &str) {
+    return emit_load(ACC, offset, reg, str);
 }
 
 void CodeGenerator::before(program_class *node) {
@@ -245,37 +220,38 @@ void CodeGenerator::before(class__class *node) {
 }
 
 void CodeGenerator::emit_function_entry(int tmp_count) {
-    str << "#\tset up stack frame; number of temporaries = " << tmp_count << endl;
-    emit_move(FP, SP, str);
-    emit_push(RA, str);
-    emit_push(SELF, str);
-    emit_move(SELF, ACC, str);
+    string name;
+    if (current_method) {
+        name = string(current_class->get_name()->get_string()) + string(".") + string(current_method->get_name()->get_string());
+    } else {
+        name = string(current_class->get_name()->get_string()) + string("_init");
+    }
+    emit_move(FP, SP, str)      << "\t# set up stack pointer for " << name << endl;
+    emit_push(RA, str)          << endl;
+    emit_push(SELF, str)        << endl;
+    emit_move(SELF, ACC, str)   << endl;
     if (tmp_count > 0) {
-        emit_addiu(SP, SP, -4 * tmp_count, str);
+        emit_addiu(SP, SP, -4 * tmp_count, str)     << "\t# push " << tmp_count << " temporaries" << endl;
     }
 
 }
 
 void CodeGenerator::emit_function_exit(int tmp_count, int parameter_count) {
-    str << "#\tfunction exit: load return address from the frame" << endl;
-    emit_load(RA, 0, FP, str);
-    str << "#\trestore previous self" << endl;
-    emit_load(SELF, -4, FP, str);
+    string name;
+    if (current_method) {
+        name = string(current_class->get_name()->get_string()) + string(".") + string(current_method->get_name()->get_string());
+    } else {
+        name = string(current_class->get_name()->get_string()) + string("_init");
+    }
+    emit_load(RA, 0, FP, str)               << "\t# exit from " << name << ": load return address" << endl;
+    emit_load(SELF, -1, FP, str)            << "\t# restore previous self" << endl;;
     int frame_size = 4 * parameter_count +
                      4 * tmp_count +
-                     8; // return address and old self
-    str << "#\tpop the frame" << endl;
-    emit_addiu(SP, SP, frame_size, str);
-    str << "#\trestore previous $fp" << endl;
-    emit_load(FP, 0, SP, str);
-    str << "#\treturn from " << current_class->get_name();
-    if (current_method) {
-        str << '.' << current_method->get_name();
-    } else {
-        str << "_init";
-    }
-    str << endl;
-    emit_return(str);
+                     8 + // return address and old self
+                     4; // old fp
+    emit_addiu(SP, SP, frame_size, str)     << "\t# pop the frame" << endl;
+    emit_load(FP, 0, SP, str)               << "\t# restore previous $fp" << endl;
+    emit_return(str)                        << "#\treturn from " << name << endl;
 
 }
 
@@ -291,8 +267,7 @@ void CodeGenerator::after(class__class *node) {
     });
     str << current_class->get_name() << "_init:" << endl;
     if (is_empty) {
-        str << "#\tall attribute initializers are empty; return straight away" << endl;
-        emit_return(str);
+        emit_return(str)    << "\t# all attribute initializers for " << node->get_name() << " are empty; return straight away" << endl;
         return;
     }
     emit_function_entry(tmp_count);
@@ -302,13 +277,11 @@ void CodeGenerator::after(class__class *node) {
         }
         // $fp points at return address; immediatelly below it is the saved previous self
         // therefore the space for the first available temporary is 2 words below $fp
-        str << "#\tcode initializer for " << ar->get_ref()->get_name() << endl;
+        Symbol name = ar->get_ref()->get_name();
         ar->get_ref()->get_initializer()->code(this, 2);
-        str << "#\tstore value returned by initializer in the attribute" << endl;
-        object_env.lookup(ar->get_ref()->get_name())->code_store(str);
+        object_env.lookup(name)->code_store(str) << "\t# assign initial value to " << name << endl;
     });
-    str << "#\trestore self in $a0" << endl;
-    emit_move(ACC, SELF, str);
+    emit_move(ACC, SELF, str) << "\t# restore self in $a0" << endl;
     emit_function_exit(tmp_count, 0);
     object_env.exitscope();
 }
@@ -332,7 +305,6 @@ void CodeGenerator::after(method_class *node) {
     emit_function_entry(tmp_count);
     // $fp points at return address; immediatelly below it is the saved previous self
     // therefore the space for the first available temporary is 2 words below $fp
-    str << "#\tcode method body" << endl;
     body->code(this, 2);
     emit_function_exit(tmp_count, scope_index - 1);
     object_env.exitscope();
@@ -343,7 +315,7 @@ void CodeGenerator::after(formal_class *node) {
 }
 
 void CodeGenerator::code(no_expr_class *expr, int n_temp) {
-    emit_move(ACC, ZERO, str);
+    emit_move(ACC, ZERO, str) << "\t# non-op" << endl;
 }
 
 

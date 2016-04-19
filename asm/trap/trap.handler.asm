@@ -377,7 +377,6 @@ str_maxsize=1026	# the maximum string length
 MemMgr_REG_MASK=0x007F0000
 
 	.text
-	j main
 
 	.globl __exception
 # Exception Message

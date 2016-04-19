@@ -1,5 +1,6 @@
+
 class C {
-	a : Int <- 3 + 2 * 5;
+	a : Int <- 5 * 8;
 	b : Bool;
 
 	init(x : Int, y : Bool) : C {
@@ -18,18 +19,20 @@ class C {
 class D inherits C {
     c: String;
     d():Int {
-        {
-        7+1;
-        5 + 2 * 3;
-        }
+        a + 2
     };
 };
 
-class Main {
+class Main inherits IO {
 --	main():C {
 --	  (new C).init(1,true)
 --	};
     main(): Int {
-        (new D).d()
+        {
+            out_string("ROARRR!!!!\n");
+            out_int((new D).d());
+            out_string("\n");
+            0;
+        }
     };
 };

@@ -8,8 +8,8 @@
 
 extern char *gc_collect_names;
 
-void emit_object_header(class__class* cls, int tag, ostream& s) {
-
+ostream & emit_object_header(class__class* cls, int tag, ostream& s) {
+    return s;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -26,14 +26,14 @@ void emit_object_header(class__class* cls, int tag, ostream& s) {
 //
 //////////////////////////////////////////////////////////////////////////////
 
-void emit_load(char *dest_reg, int offset, char *source_reg, ostream &s) {
-    s << LW << dest_reg << " " << offset * WORD_SIZE << "(" << source_reg << ")"
-    << endl;
+ostream & emit_load(char *dest_reg, int offset, char *source_reg, ostream &s) {
+    s << LW << dest_reg << " " << offset * WORD_SIZE << "(" << source_reg << ")";
+    return s;
 }
 
-void emit_store(char *source_reg, int offset, char *dest_reg, ostream &s) {
-    s << SW << source_reg << " " << offset * WORD_SIZE << "(" << dest_reg << ")"
-    << endl;
+ostream & emit_store(char *source_reg, int offset, char *dest_reg, ostream &s) {
+    s << SW << source_reg << " " << offset * WORD_SIZE << "(" << dest_reg << ")";
+    return s;
 }
 
 static void emit_load_imm(char *dest_reg, int val, ostream &s) { s << LI << dest_reg << " " << val << endl; }
@@ -44,30 +44,32 @@ static void emit_load_address(char *dest_reg, char *address, ostream &s) {
 
 static void emit_partial_load_address(char *dest_reg, ostream &s) { s << LA << dest_reg << " "; }
 
-void emit_load_bool(char *dest, const BoolConst &b, ostream &s) {
+ostream & emit_load_bool(char *dest, const BoolConst &b, ostream &s) {
     emit_partial_load_address(dest, s);
     b.code_ref(s);
-    s << endl;
+    return s;
 }
 
-void emit_load_string(char *dest, StringEntry *str, ostream &s) {
+ostream & emit_load_string(char *dest, StringEntry *str, ostream &s) {
     emit_partial_load_address(dest, s);
     str->code_ref(s);
-    s << endl;
+    return s;
 }
 
-void emit_load_int(char *dest, IntEntry *i, ostream &s) {
+ostream & emit_load_int(char *dest, IntEntry *i, ostream &s) {
     emit_partial_load_address(dest, s);
     i->code_ref(s);
-    s << endl;
+    return s;
 }
 
-void emit_move(char *dest_reg, char *source_reg, ostream &s) {
-    s << MOVE << dest_reg << " " << source_reg << endl;
+ostream & emit_move(char *dest_reg, char *source_reg, ostream &s) {
+    s << MOVE << dest_reg << " " << source_reg;
+    return s;
 }
 
-void emit_addiu(char *dest, char *src1, int imm, ostream &s) {
-    s << ADDIU << dest << " " << src1 << " " << imm << endl;
+ostream & emit_addiu(char *dest, char *src1, int imm, ostream &s) {
+    s << ADDIU << dest << " " << src1 << " " << imm;
+    return s;
 }
 
 void emit_div(char *dest, char *src1, char *src2, ostream &s) {
@@ -86,11 +88,20 @@ static void emit_sll(char *dest, char *src1, int num, ostream &s) {
     s << SLL << dest << " " << src1 << " " << num << endl;
 }
 
-void emit_jalr(char *dest, ostream &s) { s << JALR << dest << endl; }
+ostream & emit_jalr(char *dest, ostream &s) {
+    s << JALR << dest;
+    return s;
+}
 
-static void emit_jal(char *address, ostream &s) { s << JAL << address << endl; }
+ostream & emit_jal(char *address, ostream &s) {
+    s << JAL << address;
+    return s;
+}
 
-void emit_return(ostream &s) { s << RET << endl; }
+ostream & emit_return(ostream &s) {
+    s << RET;
+    return s;
+}
 
 static void emit_gc_assign(ostream &s) { s << JAL << "_GenGC_Assign" << endl; }
 
@@ -162,9 +173,9 @@ static void emit_branch(int l, ostream &s) {
 //
 // Push a register on the stack. The stack grows towards smaller addresses.
 //
-void emit_push(char *reg, ostream &str) {
-    emit_store(reg, 0, SP, str);
-    emit_addiu(SP, SP, -4, str);
+ostream & emit_push(char *reg, ostream &str) {
+    emit_store(reg, 0, SP, str) << endl;
+    return emit_addiu(SP, SP, -4, str);
 }
 
 //
@@ -172,33 +183,37 @@ void emit_push(char *reg, ostream &str) {
 // Emits code to fetch the integer value of the Integer object pointed
 // to by register source into the register dest
 //
-void emit_fetch_int(char *dest, char *source, ostream &s) { emit_load(dest, DEFAULT_OBJFIELDS, source, s); }
+ostream & emit_fetch_int(char *dest, char *source, ostream &s) {
+    return emit_load(dest, DEFAULT_OBJFIELDS, source, s);
+}
 
 //
 // Emits code to store the integer value contained in register source
 // into the Integer object pointed to by dest.
 //
-void emit_store_int(char *source, char *dest, ostream &s) { emit_store(source, DEFAULT_OBJFIELDS, dest, s); }
+ostream & emit_store_int(char *source, char *dest, ostream &s) {
+    return emit_store(source, DEFAULT_OBJFIELDS, dest, s);
+}
 
 
 static void emit_test_collector(ostream &s) {
-    emit_push(ACC, s);
-    emit_move(ACC, SP, s); // stack end
-    emit_move(A1, ZERO, s); // allocate nothing
+    emit_push(ACC, s) << endl;
+    emit_move(ACC, SP, s) << endl; // stack end
+    emit_move(A1, ZERO, s) << endl; // allocate nothing
     s << JAL << gc_collect_names[cgen_Memmgr] << endl;
-    emit_addiu(SP, SP, 4, s);
-    emit_load(ACC, 0, SP, s);
+    emit_addiu(SP, SP, 4, s) << endl;
+    emit_load(ACC, 0, SP, s) << endl;
 }
 
 static void emit_gc_check(char *source, ostream &s) {
-    if (source != (char *) A1) emit_move(A1, source, s);
+    if (source != (char *) A1) emit_move(A1, source, s) << endl;
     s << JAL << "_gc_check" << endl;
 }
 
-void emit_new(Symbol sym, ostream &str) {
+ostream & emit_new(Symbol sym, ostream &str) {
     emit_partial_load_address(ACC, str);
     str << sym << PROTOBJ_SUFFIX << endl;
-    emit_jal(OBJECT_COPY, str);
+    return emit_jal(OBJECT_COPY, str);
 }
 
 
