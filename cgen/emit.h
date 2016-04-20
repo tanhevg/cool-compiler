@@ -116,6 +116,7 @@
 #define SEQ     "\tseq\t"
 #define SLE     "\tsle\t"
 #define NOT     "\tnot\t"
+#define XORI    "\txori\t"
 
 
 #endif

@@ -42,12 +42,20 @@ private:
                                Symbol result_type);
     int condition_count;
     int loop_count;
-    int scope_index; // used for indexing attributes within a class, and formals of a method
+
+    /**
+     * used for indexing attributes within a class, and formals of a method
+     * method arguments are referenced via $fp + index; $fp points to return address;
+     * so the first method argument is $fp + 1; so the method arguments index is 1-based:
+     * we start with 1, and the number of arguments is last_index - 1
+     */
+    int scope_index;
     class__class *current_class;
     method_class *current_method;
     void emit_function_entry(int tmp_count);
     void emit_function_exit(int tmp_count, int parameter_count);
     void dispatch(Expression callee, Symbol type, Symbol name, Expressions actuals, int n_temp);
+    void code_new(Symbol type_name);
 
 public:
     CodeGenerator(ClassTable *_class_table, ostream& _str):

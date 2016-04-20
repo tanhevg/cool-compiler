@@ -85,7 +85,13 @@ void CodeGenerator::code(leq_class *expr, int n_temp) {
 }
 
 void CodeGenerator::code(comp_class *expr, int n_temp) {
-    unary_int_bool_op(expr, NOT, "'not'", n_temp, Bool);
+    expr->get_e1()->code(this, n_temp);
+    emit_fetch_int(T1, ACC, str)        << "\t# fetch value of first operand of 'not'" << endl;
+    str << XORI << T5 << " " << T1 << " 1" << "\t# code 'not'"
+                                        << "; use $t5 because $t1-$t4 are clobbered by Object.copy" << endl;;
+    emit_new(Bool, str)                 << "\t# create (new) the result of 'not' on the heap" << endl;
+    emit_store_int(T5, ACC, str)        << "\t# store the 'not' value" << endl;
+    //unary_int_bool_op(expr, NOT, "'not'", n_temp, Bool);
 }
 
 void CodeGenerator::code(int_const_class *expr, int n_temp) {
@@ -115,6 +121,7 @@ void CodeGenerator::dispatch(Expression callee, Symbol type, Symbol name, Expres
         emit_push(ACC, str)                     << "\t# push actual parameter #" << idx << " of " << type << '.' << name << endl;
     }
     callee->code(this, n_temp);
+    // todo runtime error if callee evaluates to void
     emit_load(T1, 2, ACC, str)                  << "\t# load pointer to dispatch table" << endl;
     int method_offset = class_table->get_method_offset(type, name);
     if (method_offset > 0) {
@@ -152,6 +159,7 @@ void CodeGenerator::code(loop_class *expr, int n_temp) {
     expr->get_body()->code(this, n_temp);
     str << BRANCH << "loop_start" << loop_count << endl;
     str << "loop_end" << loop_count << ':' << endl;
+    emit_move(ACC, ZERO, str)        << "\t# while returns void" << endl;
     loop_count++;
 }
 
@@ -167,23 +175,40 @@ void CodeGenerator::code(block_class *block, int n_temp) {
 }
 
 void CodeGenerator::code(let_class *expr, int n_temp) {
-//todo
+    if (expr->get_init()->is_empty()) {
+        code_new(expr->get_type_decl());
+    } else {
+        expr->get_init()->code(this, n_temp);
+    }
+    object_env.enterscope();
+    ObjectEnvRecord *temp_record = stack_entry(expr->get_type_decl(), -n_temp);
+    object_env.addid(expr->get_identifier(), temp_record);
+    temp_record->code_store(str) << "\t# store the address returned by the initaliser in temp #" << n_temp << endl;
+    expr->get_body()->code(this, n_temp+1);
+    object_env.exitscope();
 }
 
 void CodeGenerator::code(new__class *expr, int n_temp) {
-    emit_new(expr->get_type_name(), str)                << "\t# new " << expr->get_type_name() << "()" << endl;
-    emit_push(FP, str)                                  << "\t# store old frame pointer before calling new "
-                                                        << expr->get_type_name() << "()" << endl;
-    str << "\tjal\t" << expr->get_type() << "_init"     << "\t# jump to initializer of " << expr->get_type_name() << endl;
+    code_new(expr->get_type_name());
+}
 
+void CodeGenerator::code_new(Symbol type_name) {
+    emit_new(type_name, str) << "\t# new " << type_name << "()" << endl;
+    emit_push(FP, str) << "\t# store old frame pointer before calling new "
+    << type_name << "()" << endl;
+    str << "\tjal\t" << type_name << "_init" << "\t# jump to initializer of " << type_name << endl;
 }
 
 void CodeGenerator::code(isvoid_class *expr, int n_temp) {
-//todo
+    expr->get_e1()->code(this, n_temp);
+    str << SEQ << T5 << " " << ACC << " " << ZERO   << "\t# set $t5 if the result of 'isvoid' body is 0 ($zero)"
+                                                    << "; use $t5 because $t1-$t4 are clobbered by Object.copy" << endl;
+    emit_new(Bool, str)                             << "\t# create (new) the result of 'isvoid' on the heap" << endl;
+    emit_store_int(T5, ACC, str)                    << "\t# store the 'isvoid' value" << endl;
 }
 
 void CodeGenerator::code(object_class *expr, int n_temp) {
-    if (self == expr->get_name()) { //todo
+    if (self == expr->get_name()) { //todo ugly if
         emit_move(ACC, SELF, str)                               << "\t# object " << expr->get_name() << endl;
     } else {
         object_env.lookup(expr->get_name())->code_load(str)     << "\t# object " << expr->get_name() << endl;
