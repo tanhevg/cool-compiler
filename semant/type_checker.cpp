@@ -219,8 +219,12 @@ void TypeChecker::after(cond_class *node) {
         semant_error.semant_error(type_env.current_class, node) << "Predicate should be of type 'Bool'" << endl;
     }
     vector<Symbol> branch_types;
-    branch_types.push_back(then_type);
-    branch_types.push_back(else_type);
+    if (!node->get_then()->is_empty()) {
+        branch_types.push_back(then_type);
+    }
+    if (!node->get_else()->is_empty()) {
+        branch_types.push_back(else_type);
+    }
     node->set_type(type_env.class_table.join(branch_types));
 }
 
@@ -275,8 +279,7 @@ void TypeChecker::after(typcase_class *node) {
     map<Symbol, int> branch_declared_types;
     vector<Symbol> branch_expression_types;
     Cases cases = node->get_cases();
-    for(int i = cases->first(); cases->more(i); i = cases->next(i)) {
-        Case case_ = cases->nth(i);
+    cases->traverse([this, &branch_expression_types, &branch_declared_types](Case case_) {
         Symbol declared_type = case_->get_type_decl();
         if (branch_declared_types[declared_type] == 1) {
             semant_error.semant_error(type_env.current_class, case_) << "Branch with type '" << declared_type
@@ -284,12 +287,16 @@ void TypeChecker::after(typcase_class *node) {
         } else {
             branch_declared_types[declared_type] = 1;
         }
+        if (case_->get_expr()->is_empty()) {
+            return;
+        }
         Symbol case_expr_type = case_->get_expr()->get_type();
         if (!case_expr_type) {
             return;
         }
         branch_expression_types.push_back(case_expr_type);
-    }
+
+    });
     node->set_type(type_env.class_table.join(branch_expression_types));
 }
 
