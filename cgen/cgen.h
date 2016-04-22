@@ -4,6 +4,8 @@
 #include "emit.h"
 #include "cool-tree.h"
 #include "symtab.h"
+#include "cgen_helpers.h"
+
 
 enum Basicness     {Basic, NotBasic};
 #define TRUE 1
@@ -23,10 +25,15 @@ public:
     Symbol get_declaring_type() { return declaring_type; }
     char* get_reg() {return reg;}
     int get_offset() {return offset;}
-    void code_ref(ostream &str);
-    ostream & code_store(ostream &str);
 
-    ostream & code_load(ostream &str);
+    template <typename... Ts> ostream & code_store(ostream &str, int line_no, Ts... logs) {
+        return emit_store(ACC, offset, reg, str, line_no, logs...);
+    }
+
+    template <typename... Ts> ostream & code_load(ostream &str, int line_no, Ts... logs) {
+        return emit_load(ACC, offset, reg, str, line_no, logs...);
+    }
+
 };
 
 typedef SymbolTable<Symbol, ObjectEnvRecord> ObjectEnv;
@@ -52,10 +59,10 @@ private:
     int scope_index;
     class__class *current_class;
     method_class *current_method;
-    void emit_function_entry(int tmp_count);
-    void emit_function_exit(int tmp_count, int parameter_count);
-    void dispatch(Expression callee, Symbol type, Symbol name, Expressions actuals, int n_temp);
-    void code_new(Symbol type_name);
+    void emit_function_entry(int tmp_count, int line_no);
+    void emit_function_exit(int tmp_count, int parameter_count, int line_no);
+    void dispatch(int line_no, Expression callee, Symbol type, Symbol name, Expressions actuals, int n_temp);
+    void code_new(Symbol type_name, int line_no);
 
 public:
     CodeGenerator(ClassTable *_class_table, ostream& _str):

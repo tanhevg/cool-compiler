@@ -24,8 +24,8 @@ add_custom_command(OUTPUT cool-parse.cc DEPENDS cool.y
 add_executable(cool-lexer ${LEXER_SOURCE_FILES})
 target_link_libraries(cool-lexer cooldist ${FLEX_LIB})
 
-add_executable(cool-parser ${PARSER_SOURCE_FILES})
-target_link_libraries(cool-parser tree semant cgen cooldist tree ${FLEX_LIB})
+add_executable(cool-compiler ${PARSER_SOURCE_FILES})
+target_link_libraries(cool-compiler tree semant cgen cooldist tree ${FLEX_LIB})
 
 add_executable(test-app test-main.cpp)
 

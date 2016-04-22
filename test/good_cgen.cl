@@ -24,13 +24,23 @@ class D inherits C {
 };
 
 class Main inherits IO {
+
+    abs(i:Int):Int {
+        if (i < 0) then
+            ~i
+        else
+            i
+        fi
+    };
+
     main(): Int {
         {
             out_string("Enter a number: ");
             -- let i : Int <- 8 in
-            let i : Int <- in_int() in
+            let i : Int <- in_int(), even : Bool in
             {
-                if (i / 2) * 2 = i then
+                even <- (i / 2) * 2 = i;
+                if even then
                     out_string("Even\n")
                 else
                     out_string("Odd\n")
@@ -38,9 +48,10 @@ class Main inherits IO {
                 -- todo chain calls
                 out_int(i);
                 out_string("\n");
-                while not(i <= 1) loop
+                while not(abs(i) <= 1) loop
                 {
                     i <- i / 2;
+                    if not(even) then i <- ~i else {} fi;
                     out_int(i);
                     out_string("\n");
                 } pool;
