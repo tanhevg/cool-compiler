@@ -138,6 +138,7 @@ void CodeGenerator::dispatch(int line_no, Expression callee, Symbol type, Symbol
 }
 
 void CodeGenerator::code(static_dispatch_class *expr, int n_temp) {
+    //todo bug: static dispatch should not use the vtable
     dispatch(expr->get_line_number(), expr->get_callee(), expr->get_type_name(), expr->get_name(), expr->get_actuals(), n_temp);
 }
 
@@ -344,7 +345,19 @@ void CodeGenerator::code(no_expr_class *expr, int n_temp) {
     emit_move(ACC, ZERO, str, expr->get_line_number(), "non-op");
 }
 
+void CaseDataCoder::after(typcase_class *node) {
+    case_count++;
+}
 
+void CaseDataCoder::after(branch_class *node) {
+    str << WORD << class_table->get_class_tag(node->get_type_decl()) << endl;
+    str << WORD << "case_" << case_count << '_' << node->get_type_decl() << endl;
+
+}
+
+void CaseDataCoder::before(typcase_class *node) {
+    str << "case_" << case_count << '_' << "tab" << LABEL;
+}
 
 
 #pragma clang diagnostic pop

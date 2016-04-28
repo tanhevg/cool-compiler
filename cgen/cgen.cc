@@ -65,6 +65,9 @@ static void code_global_text(ostream&);
 static void code_global_data(ostream&);
 static void code_select_gc(ostream&);
 static void code_bools(ostream&, int);
+static void code_class_name_tab(ClassTable*, ostream&);
+static void code_class_obj_tab(ClassTable*, ostream&);
+static void code_inheritance_tab(ClassTable*, ostream&);
 
 void program_class::cgen(ostream &os) {
     // spim wants comments to start with '#'
@@ -78,7 +81,7 @@ void program_class::cgen(ostream &os) {
     // We also need to know the tag of the Int, String, and Bool classes
     // during code generation.
     //
-    classtable->index_features();
+    classtable->index();
     int intclasstag = classtable->get_class_tag(Int);
     os << INTTAG << LABEL
     << WORD << intclasstag << endl;
@@ -89,22 +92,9 @@ void program_class::cgen(ostream &os) {
     os << STRINGTAG << LABEL
     << WORD << stringclasstag << endl;
 
-    os << CLASSNAMETAB << LABEL;
-    classtable->visit_classes_ordered_by_tag([&os](Class_ cls) {
-        os << WORD;
-        stringtable.add_string(cls->get_name()->get_string())->code_ref(os);
-        os << endl;
-    });
-
-    os << CLASSOBJTAB << LABEL;
-    classtable->visit_classes_ordered_by_tag([&os](Class_ cls) {
-        os << WORD;
-        Symbol class_name = cls->get_name();
-        emit_protobj_ref(class_name, os);
-        os << endl;
-        os << WORD;
-        os << class_name << "_init" << endl;
-    });
+    code_class_name_tab(classtable, os);
+    code_class_obj_tab(classtable, os);
+    code_inheritance_tab(classtable, os);
 
     if (cgen_debug) cout << "choosing gc" << endl;
     code_select_gc(os);
@@ -127,6 +117,9 @@ void program_class::cgen(ostream &os) {
     TemporariesCounter temporariesCounter;
     traverse_tree(&temporariesCounter);
 
+    CaseDataCoder caseDataCoder(os, classtable);
+    traverse_tree(&caseDataCoder);
+
 //                 Add your code to emit
 //                   - prototype objects
 //                   - class_nameTab
@@ -135,7 +128,7 @@ void program_class::cgen(ostream &os) {
 
     if (cgen_debug) cout << "coding global text" << endl;
     code_global_text(os);
-    os << "main:" << endl;
+    os << "main" << LABEL;
     os << JUMP << "__start" << endl;
 
     CodeGenerator codeGen(classtable, os);
@@ -147,6 +140,44 @@ void program_class::cgen(ostream &os) {
 //                   - etc...
 
     os << "\n# end of generated code\n";
+}
+
+static void code_inheritance_tab(ClassTable *classtable, ostream &os) {
+    os << "inheritance_tab" << LABEL;
+//    os << WORD << -1 << " # Object has tag 0 and no parent, so an eye catcher here in place of Object's parent" << endl;
+    classtable->visit_classes_ordered_by_tag([&os, classtable](Class_ cls) {
+        int tag = -1;
+        Symbol parent = cls->get_parent();
+        if (parent != No_class) {
+            tag = classtable->get_class_tag(parent);
+        }
+        os << WORD << tag << endl;
+    });
+//    for (int i = 1; i < classtable->get_last_class_tag(); i++) {
+//        os << WORD << classtable->get_parent_class_tag(i) << endl;
+//    }
+}
+
+void code_class_obj_tab(ClassTable *classtable, ostream& os) {
+    os << CLASSOBJTAB << LABEL;
+    classtable->visit_classes_ordered_by_tag([&os](Class_ cls) {
+        os << WORD;
+        Symbol class_name = cls->get_name();
+        emit_protobj_ref(class_name, os);
+        os << endl;
+        os << WORD;
+        os << class_name << "_init" << endl;
+    });
+
+}
+
+void code_class_name_tab(ClassTable *classtable, ostream& os) {
+    os << CLASSNAMETAB << LABEL;
+    classtable->visit_classes_ordered_by_tag([&os](Class_ cls) {
+        os << WORD;
+        stringtable.add_string(cls->get_name()->get_string())->code_ref(os);
+        os << endl;
+    });
 }
 
 

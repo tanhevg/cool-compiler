@@ -23,6 +23,10 @@ class D inherits C {
     };
 };
 
+class E inherits D {
+
+};
+
 class Main inherits IO {
 
     abs(i:Int):Int {
@@ -31,6 +35,10 @@ class Main inherits IO {
         else
             i
         fi
+    };
+
+    test_case() : Object {
+        new E
     };
 
     main(): Int {
@@ -56,6 +64,16 @@ class Main inherits IO {
                     out_string("\n");
                 } pool;
             };
+            let tc:Object <- test_case() in
+                case tc of
+                    e : E => out_string("E");
+                    d : D => out_string("D");
+                    c : C => out_string("C");
+                    o : Object => out_string("Object");
+                    io : IO => out_string("IO");
+                    main : Main => out_string("IO");
+                esac;
+
             -- out_int((new D).d(8, 2));
             -- out_string("\n");
             0;

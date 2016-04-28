@@ -114,12 +114,13 @@ public:
 
 class ClassTable : public TreeVisitor {
     map<Symbol, ClassTableRecord*> class_by_name;
+    vector<ClassTableRecord*> class_by_tag;
     ClassTableRecord* current_class_record;
     void index_attributes_and_methods_rec(Symbol class_name);
     int class_tag;
 public:
     virtual ~ClassTable();
-    ClassTable() : class_by_name(), current_class_record(nullptr), class_tag(0) {}
+    ClassTable() : class_by_name(), current_class_record(nullptr), class_tag(1) {}
     Class_ get_class(Symbol s);
     Symbol get_parent(Symbol class_name);
     bool is_subtype(Symbol sub, Symbol super);
@@ -132,7 +133,7 @@ public:
     void after(method_class *node);
 
 
-    void index_features();
+    void index();
 
     int get_class_tag(Symbol class_name);
 
@@ -147,14 +148,14 @@ public:
     }
 
     void visit_classes_ordered_by_tag(function<void(Class_)> lambda) {
-        vector<ClassTableRecord *> records;
-        for (auto r: class_by_name) {
-            records.push_back(r.second);
-        }
-        sort(records.begin(), records.end(), [](auto a, auto b) {
-            return a->get_class_tag() < b->get_class_tag();
-        });
-        for (auto r: records) {
+//        vector<ClassTableRecord *> records;
+//        for (auto r: class_by_name) {
+//            records.push_back(r.second);
+//        }
+//        sort(records.begin(), records.end(), [](auto a, auto b) {
+//            return a->get_class_tag() < b->get_class_tag();
+//        });
+        for (auto r: class_by_tag) {
             lambda(r->get_class());
         }
     }

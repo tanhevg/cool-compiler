@@ -44,6 +44,7 @@ public:
     virtual void after(let_class *node) {};
     virtual void before(branch_class *node) {};
     virtual void after(branch_class *node) {};
+    virtual void before(typcase_class *node) {};
     virtual void after(typcase_class *node) {};
     virtual void after(loop_class *node) {};
     virtual void after(isvoid_class *node) {};

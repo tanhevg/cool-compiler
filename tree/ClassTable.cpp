@@ -66,7 +66,11 @@ bool ClassTable::is_subtype(Symbol sub, Symbol super) {
 }
 
 void ClassTable::before(class__class *node) {
-    class_by_name[node->get_name()] = current_class_record = new ClassTableRecord(node, class_tag++);
+    int _class_tag = 0;
+    if (node->get_name() != Object) {
+        _class_tag = class_tag++;
+    }
+    class_by_name[node->get_name()] = current_class_record = new ClassTableRecord(node, _class_tag);
     stringtable.add_string(node->get_name()->get_string());
 }
 
@@ -104,9 +108,12 @@ void ClassTableRecord::index_features(int start_attr_idx, int start_method_idx) 
     indexed = true;
 }
 
-void ClassTable::index_features() {
+void ClassTable::index() {
+    class_by_tag = vector<ClassTableRecord*>(class_by_name.size());
     for (auto item : class_by_name) {
+        auto class_record = item.second;
         index_attributes_and_methods_rec(item.first);
+        class_by_tag[class_record->get_class_tag()] = class_record;
     }
 }
 
