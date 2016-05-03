@@ -1,6 +1,6 @@
 class Main inherits IO {
     five(): Int {
-        5
+
     };
     six() : Int {
         6

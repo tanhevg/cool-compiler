@@ -90,7 +90,7 @@ private:
 
     void emit_function_exit(int tmp_count, int parameter_count, int line_no);
 
-    void dispatch(int line_no, Expression callee, Symbol type, Symbol name, Expressions actuals, int n_temp);
+    void dispatch(int line_no, Expression callee, Symbol static_type_or_null, Symbol name, Expressions actuals, int n_temp);
 
     void code_new(Symbol type_name, int line_no);
 

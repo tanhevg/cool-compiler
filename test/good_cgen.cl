@@ -14,6 +14,10 @@ class C {
            }
 	};
 
+	static_str():String {
+	    "C"
+	};
+
 };
 
 class D inherits C {
@@ -21,12 +25,18 @@ class D inherits C {
     d(d1:Int, d2:Int):Int {
         a * d1 + d2
     };
+	static_str():String {
+	    "D"
+	};
 };
 
 class E inherits D {
     e() : Object {
         new IO.out_string("e\n")
     };
+	static_str():String {
+	    "E"
+	};
 };
 
 class Main inherits IO {
@@ -69,19 +79,19 @@ class Main inherits IO {
     test2() : Int { {
         let tc:Object <- test_case() in
             case tc of
-                e : E => e.e();
+                e : E => out_string(e@D.static_str()).out_string("\n"); -- todo bug in disp tables
                 d : D => out_string("D\n");
                 c : C => out_string("C\n");
                 o : Object => out_string("Object\n");
                 io : IO => out_string("IO\n");
-                i : Int => out_int(i).out_string("\n");
-                s : String => out_string(s);
+--                i : Int => out_int(i).out_string("\n");
+                s : String => out_string(s).out_string("\n");
                 main : Main => out_string("Main\n");
             esac;
         0;
     } };
 
     main(): Int {
-        test1()
+        test2()
     };
 };

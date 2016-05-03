@@ -8,21 +8,27 @@
 #include <functional>
 #include <cctype>
 #include <locale>
+#include <string>
+
+using std::string;
+using std::isspace;
+using std::find_if_not;
+using std::ptr_fun;
 
 // trim from start
-static inline std::string &ltrim(std::string &s) {
-    s.erase(s.begin(), std::find_if_not(s.begin(), s.end(), std::ptr_fun<int, int>(std::isspace)));
+static inline string &ltrim(string &s) {
+    s.erase(s.begin(), find_if_not(s.begin(), s.end(), ptr_fun<int, int>(isspace)));
     return s;
 }
 
 // trim from end
-static inline std::string &rtrim(std::string &s) {
-    s.erase(std::find_if_not(s.rbegin(), s.rend(), std::ptr_fun<int, int>(std::isspace)).base(), s.end());
+static inline string &rtrim(string &s) {
+    s.erase(find_if_not(s.rbegin(), s.rend(), ptr_fun<int, int>(isspace)).base(), s.end());
     return s;
 }
 
 // trim from both ends
-static inline std::string &trim(std::string &s) {
+static inline string &trim(string &s) {
     return ltrim(rtrim(s));
 }
 

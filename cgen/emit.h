@@ -129,36 +129,32 @@
  *
  * Temporaries
  * $t0 - start of inheritance table
- * $t1 - branch table index
- * $t2 - address in branch table, tag from branch table
+ * $t1 - address in branch table
+ * $t2 - tag from branch table
  * $t3 - address in inheritance table, tag from inheritance table
  */
 #define CASE_SUBROUTINE "\
-case_subroutine:\n\
-    move    $t1 $zero                               # initialise branch table index to 0 \n\
-    move    $t2 $a1                                 # initialise address of tag in branch table to branch table start\n\
-    lw      $t3 0($a0)                              # load class tag of case argument (passed in $a0) into $t3\n\
-    la      $t0 inheritance_tab                     # load start of inheritance table in $t0\n\
-case_subroutine_loop_start:\n\
-    beq     $t2 $a2 case_subroutine_not_found       # the new address is at the branch table end\n\
-    lw      $t2 0($t2)                              # load tag from branch table\n\
-    beq     $t2 $t3 case_subroutine_found           # tag from branch table matches case argument tag -> we found the branch \n\
-    addiu   $t1 8                                   # increment branch table index\n\
-    addu    $t2 $a1 $t1                             # compute new address of branch table tag by adding the index to branch table start\n\
-    j       case_subroutine_loop_start              # repeat the loop wiht the new branch\n\
-case_subroutine_not_found:\n\
-    beq     $t3 $zero case_subroutine_exception     # nothing found for Object -> abort\n\
-    sll     $t3 $t3 2                               # multiply tag of case argument by word size (=4)\n\
-    addu    $t3 $t0 $t3                             # compute new address in the inheritance table\n\
-    lw      $t3 0($t3)                              # load new tag from inheritance table\n\
-    move    $t1 $zero                               # initialise branch table index to 0 \n\
-    move    $t2 $a1                                 # initialise address of tag in branch table to branch table start\n\
-    j       case_subroutine_loop_start              # repeat the loop with new tag from the inheritance table\n\
-case_subroutine_exception:\n\
-    j       _case_abort                             # abort ($a0 is preserved)\n\
-case_subroutine_found:\n\
-    addu    $t2 $a1 $t1                             # compute new address of branch table tag by adding branch table index to branch table start\n\
-    lw      $ra 4($t2)                              # load the lable from branch table\n\
+_case_subroutine:\n\
+    move    $t1 $a1                      # initialise address in branch table to branch table start\n\
+    lw      $t3 0($a0)                   # load class tag of case argument (passed in $a0) into $t3\n\
+    la      $t0 inheritance_tab          # load start of inheritance table in $t0\n\
+_csr_loop_start:\n\
+    lw      $t2 0($t1)                   # load tag from branch table\n\
+    beq     $t2 $t3 _csr_found           # tag from branch table matches case argument tag -> we found the branch \n\
+    beq     $t1 $a2 _csr_not_found       # the new address is at the branch table end\n\
+    addiu   $t1 8                        # increment branch table index by 2 words (8 bytes)\n\
+    j       _csr_loop_start              # repeat the loop wiht the new branch\n\
+_csr_not_found:\n\
+    beq     $t3 $zero _csr_exception     # nothing found for Object -> abort\n\
+    sll     $t3 $t3 2                    # multiply tag of case argument by word size (=4)\n\
+    addu    $t3 $t0 $t3                  # compute new address in the inheritance table\n\
+    lw      $t3 0($t3)                   # load new tag from inheritance table\n\
+    move    $t1 $a1                      # initialise address in branch table to branch table start\n\
+    j       _csr_loop_start              # repeat the loop with new tag from the inheritance table\n\
+_csr_exception:\n\
+    j       _case_abort                  # abort ($a0 is preserved)\n\
+_csr_found:\n\
+    lw      $ra 4($t1)                   # load the lable from branch table\n\
     jr      $ra\n\
 "
 

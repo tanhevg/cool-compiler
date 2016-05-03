@@ -18,7 +18,7 @@ static ObjectEnvRecord *stack_entry(Symbol declaring_type, int offset) {
 }
 
 static ObjectEnvRecord *heap_entry(Symbol declaring_type,
-                                   int offset) { // todo use attribute AST node instead of offset?
+                                   int offset) {
     return new ObjectEnvRecord(declaring_type, SELF, offset);
 }
 
@@ -26,6 +26,7 @@ static ObjectEnvRecord *heap_entry(Symbol declaring_type,
  * Operators dealing with Int's and Bool's deal with them in object form.
  * Temporary objects are created on heap for result of each expression
  * Expression result in $a0 is the address of the newly created object on the heap
+ * todo special handling for void (e.g. return value of a method with empty body, etc)
  */
 void CodeGenerator::binary_int_bool_op(Binary_Expression_class *expr, char *opcode, const char *op_string, int n_temp,
                                        Symbol result_type) {
@@ -128,7 +129,8 @@ static void emit_pop_fp(ostream &str, int line_no) {
 
 }
 
-void CodeGenerator::dispatch(int line_no, Expression callee, Symbol type, Symbol name, Expressions actuals, int n_temp) {
+void CodeGenerator::dispatch(int line_no, Expression callee, Symbol static_type_or_null, Symbol name, Expressions actuals, int n_temp) {
+    Symbol type = static_type_or_null ? static_type_or_null : callee->get_type();
     emit_push(FP, str, line_no, "push old frame pointer before calling ", type, '.', name );
     for (int i = 0; i < actuals->len(); i++) {
         // evaluate parameters in the reverse order, such that they appear in the correct order in the stack frame
@@ -139,7 +141,12 @@ void CodeGenerator::dispatch(int line_no, Expression callee, Symbol type, Symbol
     }
     callee->code(this, n_temp);
     // todo runtime error if callee evaluates to void
-    emit_load(T1, 2, ACC, str, line_no, "load pointer to dispatch table");
+    if (static_type_or_null) {
+        emit_load_address(T1, (string(static_type_or_null->get_string()) + "_dispTab").c_str(), str, line_no,
+                          "load address of static dispatch table");
+    } else {
+        emit_load(T1, 2, ACC, str, line_no, "load address of dynamic dispatch table");
+    }
     int method_offset = class_table->get_method_offset(type, name);
     if (method_offset > 0) {
         emit_load(T1, method_offset, T1, str, line_no, "load address of ", type, '.', name);
@@ -150,12 +157,11 @@ void CodeGenerator::dispatch(int line_no, Expression callee, Symbol type, Symbol
 }
 
 void CodeGenerator::code(static_dispatch_class *expr, int n_temp) {
-    //todo bug: static dispatch should not use the vtable
     dispatch(expr->get_line_number(), expr->get_callee(), expr->get_type_name(), expr->get_name(), expr->get_actuals(), n_temp);
 }
 
 void CodeGenerator::code(dispatch_class *expr, int n_temp) {
-    dispatch(expr->get_line_number(), expr->get_callee(), expr->get_callee()->get_type(), expr->get_name(), expr->get_actuals(), n_temp);
+    dispatch(expr->get_line_number(), expr->get_callee(), nullptr, expr->get_name(), expr->get_actuals(), n_temp);
 }
 
 void CodeGenerator::code(cond_class *expr, int n_temp) {
@@ -197,7 +203,7 @@ void CodeGenerator::code(typcase_class *expr, int n_temp) {
     emit_load_address(A1, case_label(case_count, "tab_start"), str, line_no, "case: load start of branch table into $a1");
     emit_load_address(A2, case_label(case_count, "tab_end"), str, line_no, "case: load end of branch table into $a2");
     emit_addiu(A2, A2, -8, str, line_no, "case: subtract 2 words from branch table end, such that BEQ test can be used");
-    emit_jump("case_subroutine", str, line_no, "jump to case subroutine");
+    emit_jump("_case_subroutine", str, line_no, "jump to case subroutine");
     expr->get_cases()->traverse([this, n_temp](Case _case){
         object_env.enterscope();
         object_env.addid(_case->get_name(), stack_entry(_case->get_type_decl(), -n_temp));
