@@ -254,6 +254,7 @@ void code_global_text(ostream &str) {
     str << endl << GLOBAL;
     str << "\tmain";
     str << endl;
+    str << CASE_SUBROUTINE;
 }
 
 void code_bools(ostream& str, int boolclasstag) {

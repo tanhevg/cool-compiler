@@ -35,10 +35,14 @@ ostream & emit_store(char *source_reg, int offset, char *dest_reg, ostream &s) {
     return s;
 }
 
-static void emit_load_imm(char *dest_reg, int val, ostream &s) { s << LI << dest_reg << " " << val << endl; }
+ostream & emit_load_imm(char *dest_reg, int val, ostream &s) {
+    s << LI << dest_reg << " " << val;
+    return s;
+}
 
-static void emit_load_address(char *dest_reg, char *address, ostream &s) {
-    s << LA << dest_reg << " " << address << endl;
+ostream & emit_load_address(char *dest_reg, const char *address, ostream &s) {
+    s << LA << dest_reg << " " << address;
+    return s;
 }
 
 void emit_partial_load_address(char *dest_reg, ostream &s) { s << LA << dest_reg << " "; }
@@ -50,6 +54,11 @@ ostream & emit_move(char *dest_reg, char *source_reg, ostream &s) {
 
 ostream & emit_addiu(char *dest, char *src1, int imm, ostream &s) {
     s << ADDIU << dest << " " << src1 << " " << imm;
+    return s;
+}
+
+ostream & emit_jump(const char *dest, ostream &s) {
+    s << JUMP << dest;
     return s;
 }
 
@@ -89,6 +98,11 @@ static void emit_label_def(int l, ostream &s) {
     emit_label_ref(l, s);
     s << ":" << endl;
 }
+
+ostream & emit_label_def(const char *ls, int ln, ostream &s) {
+    return emit_label_ref(ls, ln, s) << ":" << endl;
+}
+
 
 static void emit_beq(char *src1, char *src2, int label, ostream &s) {
     s << BEQ << src1 << " " << src2 << " ";

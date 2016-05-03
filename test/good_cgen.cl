@@ -24,10 +24,14 @@ class D inherits C {
 };
 
 class E inherits D {
-
+    e() : Object {
+        new IO.out_string("e\n")
+    };
 };
 
 class Main inherits IO {
+
+    e: E <- new E;
 
     abs(i:Int):Int {
         if (i < 0) then
@@ -38,45 +42,46 @@ class Main inherits IO {
     };
 
     test_case() : Object {
-        new E
+        e
     };
 
-    main(): Int {
+    test1() : Int { {
+        out_string("Enter a number: ");
+        let i : Int <- in_int(), even : Bool in
         {
-            out_string("Enter a number: ");
-            -- let i : Int <- 8 in
-            let i : Int <- in_int(), even : Bool in
+            even <- (i / 2) * 2 = i;
+            if even then
+                out_string("Even\n")
+            else
+                out_string("Odd\n")
+            fi;
+            out_int(i).out_string("\n");
+            while not(abs(i) <= 1) loop
             {
-                even <- (i / 2) * 2 = i;
-                if even then
-                    out_string("Even\n")
-                else
-                    out_string("Odd\n")
-                fi;
-                -- todo chain calls
-                out_int(i);
-                out_string("\n");
-                while not(abs(i) <= 1) loop
-                {
-                    i <- i / 2;
-                    if not(even) then i <- ~i else {} fi;
-                    out_int(i);
-                    out_string("\n");
-                } pool;
-            };
-            let tc:Object <- test_case() in
-                case tc of
-                    e : E => out_string("E");
-                    d : D => out_string("D");
-                    c : C => out_string("C");
-                    o : Object => out_string("Object");
-                    io : IO => out_string("IO");
-                    main : Main => out_string("IO");
-                esac;
+                i <- i / 2;
+                if not(even) then i <- ~i else {} fi;
+                out_int(i).out_string("\n");
+            } pool;
+        };
+        0;
+    } };
 
-            -- out_int((new D).d(8, 2));
-            -- out_string("\n");
-            0;
-        }
+    test2() : Int { {
+        let tc:Object <- test_case() in
+            case tc of
+                e : E => e.e();
+                d : D => out_string("D\n");
+                c : C => out_string("C\n");
+                o : Object => out_string("Object\n");
+                io : IO => out_string("IO\n");
+                i : Int => out_int(i).out_string("\n");
+                s : String => out_string(s);
+                main : Main => out_string("Main\n");
+            esac;
+        0;
+    } };
+
+    main(): Int {
+        test1()
     };
 };

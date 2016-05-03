@@ -11,19 +11,23 @@
 ostream & emit_object_header(class__class* cls, int tag, ostream& s);
 
 void emit_disptable_ref(Symbol sym, ostream &s);
-ostream &  emit_label_ref(int l, ostream &s);
-ostream &  emit_label_ref(const char *ls, int ln, ostream &s);
+ostream & emit_label_ref(int l, ostream &s);
+ostream & emit_label_ref(const char *ls, int ln, ostream &s);
+ostream & emit_label_def(const char *ls, int ln, ostream &s);
 void emit_protobj_ref(Symbol sym, ostream &s);
 void emit_method_ref(Symbol classname, Symbol methodname, ostream &s);
 void emit_init_ref(Symbol sym, ostream &s);
 ostream & emit_store(char *source_reg, int offset, char *dest_reg, ostream &s);
 
 ostream & emit_load(char *dest_reg, int offset, char *source_reg, ostream &s);
+ostream & emit_load_address(char *dest_reg, const char *address, ostream &s);
+ostream & emit_load_imm(char *dest_reg, int val, ostream &s);
 
 ostream & emit_move(char *dest_reg, char *source_reg, ostream &s);
 
 ostream & emit_push(char *reg, ostream &str);
 ostream & emit_addiu(char *dest, char *src1, int imm, ostream &s);
+ostream & emit_jump(const char *dest, ostream &s);
 
 void emit_partial_load_address(char *dest_reg, ostream &s);
 
@@ -50,6 +54,16 @@ template <typename... Ts> ostream & emit_store(char *source_reg, int offset, cha
 
 template <typename... Ts> ostream & emit_load(char *dest_reg, int offset, char *source_reg, ostream &s, int line_no, Ts... comments) {
     emit_load(dest_reg, offset, source_reg, s);
+    return comment(s, line_no, comments...);
+}
+
+template <typename... Ts> ostream & emit_load_address(char *dest_reg, const char *address, ostream &s, int line_no, Ts... comments) {
+    emit_load_address(dest_reg, address, s);
+    return comment(s, line_no, comments...);
+}
+
+template <typename... Ts> ostream & emit_load_imm(char *dest_reg, int val, ostream &s, int line_no, Ts... comments) {
+    emit_load_imm(dest_reg, val, s);
     return comment(s, line_no, comments...);
 }
 
@@ -103,6 +117,12 @@ template <typename... Ts> ostream & emit_beqz(const char *source, const char *ls
     emit_label_ref(ls, ln, s);
     return comment(s, line_no, comments...);
 }
+
+template <typename... Ts> ostream & emit_beqz(const char *source, const char *address, ostream &s, int line_no, Ts... comments) {
+    s << BEQZ << source << " " << address;
+    return comment(s, line_no, comments...);
+}
+
 template <typename... Ts> ostream & emit_branch(const char *ls, int ln, ostream &s, int line_no, Ts... comments) {
     s << BRANCH;
     emit_label_ref(ls, ln, s);
@@ -130,6 +150,11 @@ template <typename... Ts> ostream & emit_return(ostream &s, int line_no, Ts... c
 
 template <typename... Ts> ostream & emit_addiu(char *dest, char *src1, int imm, ostream &s, int line_no, Ts... comments) {
     emit_addiu(dest, src1, imm, s);
+    return comment(s, line_no, comments...);
+}
+
+template <typename... Ts> ostream & emit_jump(const char *dest, ostream &s, int line_no, Ts... comments) {
+    emit_jump(dest, s);
     return comment(s, line_no, comments...);
 }
 

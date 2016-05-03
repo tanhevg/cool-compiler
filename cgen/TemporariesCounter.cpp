@@ -51,7 +51,7 @@ void TemporariesCounter::after(let_class *node) {
 }
 
 void TemporariesCounter::after(branch_class *node) {
-    node->set_temporaries_count(node->get_expr()->get_temporaries_count());
+    node->set_temporaries_count(node->get_expr()->get_temporaries_count() + 1); //case argument is stored as a temporary
 }
 
 void TemporariesCounter::after(typcase_class *node) {

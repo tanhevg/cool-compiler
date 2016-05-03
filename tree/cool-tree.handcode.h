@@ -116,6 +116,7 @@ Symbol get_name();
 int temporaries_count;	    		    	 \
 virtual Expression get_expr() = 0;\
 virtual Symbol get_type_decl() = 0;\
+virtual Symbol get_name() = 0;\
 virtual void dump_with_types(ostream& ,int) = 0;\
 int get_temporaries_count() {return temporaries_count;} \
 void set_temporaries_count(int _temporaries_count) {temporaries_count = _temporaries_count;}

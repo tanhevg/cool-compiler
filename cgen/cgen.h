@@ -94,6 +94,8 @@ private:
 
     void code_new(Symbol type_name, int line_no);
 
+    std::string generate_init_or_method_name() const;
+
 public:
     CodeGenerator(ClassTable *_class_table, ostream &_str) :
             class_table(_class_table), object_env(), str(_str),

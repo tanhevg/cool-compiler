@@ -5,6 +5,9 @@
 #include "string_util.h"
 
 using std::string;
+using std::to_string;
+
+extern char *curr_filename;
 
 
 #pragma clang diagnostic push
@@ -119,9 +122,17 @@ void CodeGenerator::code(assign_class *expr, int n_temp) {
     object_env.lookup(expr->get_name())->code_store(str, expr->get_line_number(),  "assign to ", expr->get_name());
 }
 
+static void emit_pop_fp(ostream &str, int line_no) {
+    emit_addiu(SP, SP, 4, str, line_no, "pop $fp");
+    emit_load(FP, 0, SP, str, line_no, "pop $fp");
+
+}
+
 void CodeGenerator::dispatch(int line_no, Expression callee, Symbol type, Symbol name, Expressions actuals, int n_temp) {
-    emit_push(FP, str, line_no, "store old frame pointer before calling ", type, '.', name );
+    emit_push(FP, str, line_no, "push old frame pointer before calling ", type, '.', name );
     for (int i = 0; i < actuals->len(); i++) {
+        // evaluate parameters in the reverse order, such that they appear in the correct order in the stack frame
+        // the first parameter should appear at index 0 from $fp, i.e. last in the stack
         int idx = actuals->len() - i - 1;
         actuals->nth(idx)->code(this, n_temp);
         emit_push(ACC, str, line_no, "push actual parameter #", idx, " of ", type, '.', name);
@@ -134,7 +145,8 @@ void CodeGenerator::dispatch(int line_no, Expression callee, Symbol type, Symbol
         emit_load(T1, method_offset, T1, str, line_no, "load address of ", type, '.', name);
     }
     emit_jalr(T1, str, line_no, "call ", type, '.', name);
-
+    // code this here instead of emit_function_exit, because functions in trap handler do not pop $fp
+    emit_pop_fp(str, line_no);
 }
 
 void CodeGenerator::code(static_dispatch_class *expr, int n_temp) {
@@ -172,8 +184,35 @@ void CodeGenerator::code(loop_class *expr, int n_temp) {
     loop_count++;
 }
 
+static const char* case_label(int case_count, const char *label) {
+    string str = string("case_") + to_string(case_count) + '_' + label;
+    return str.data();
+}
+
 void CodeGenerator::code(typcase_class *expr, int n_temp) {
-//todo
+    int line_no = expr->get_line_number();
+    expr->get_expr()->code(this, n_temp);
+    emit_beqz(ACC, case_label(case_count, "exception"), str, line_no, "abort if case argument is void");
+    emit_store(ACC, -n_temp, FP, str, line_no, "case: store argument in temporary #", n_temp);
+    emit_load_address(A1, case_label(case_count, "tab_start"), str, line_no, "case: load start of branch table into $a1");
+    emit_load_address(A2, case_label(case_count, "tab_end"), str, line_no, "case: load end of branch table into $a2");
+    emit_addiu(A2, A2, -8, str, line_no, "case: subtract 2 words from branch table end, such that BEQ test can be used");
+    emit_jump("case_subroutine", str, line_no, "jump to case subroutine");
+    expr->get_cases()->traverse([this, n_temp](Case _case){
+        object_env.enterscope();
+        object_env.addid(_case->get_name(), stack_entry(_case->get_type_decl(), -n_temp));
+        str << case_label(case_count, _case->get_type_decl()->get_string()) << LABEL; // branch label
+        _case->get_expr()->code(this, n_temp+1);
+        emit_jump(case_label(case_count, "end"), str, _case->get_line_number(), "jump to end of case after branch is evaluated");
+        object_env.exitscope();
+    });
+    str << case_label(case_count, "exception") << LABEL;
+    emit_load_string(ACC, stringtable.lookup_string(curr_filename), str, line_no,
+                     "no branch found exception: load file name into $a0 before aborting");
+    emit_load_imm(T1, line_no, str, line_no, "no branch found exception: load line number into $t1");
+    emit_jump("_case_abort2", str, line_no, "abort case after branch not found");
+    str << case_label(case_count, "end") << LABEL; // end of case label
+    case_count++;
 }
 
 void CodeGenerator::code(block_class *block, int n_temp) {
@@ -207,6 +246,7 @@ void CodeGenerator::code_new(Symbol type_name, int line_no) {
     emit_push(FP, str, line_no, "store old frame pointer before calling ", type_name, "_init");
     str << "\tjal\t" << type_name << "_init";
     comment(str, line_no, "jump to initializer of ", type_name);
+    emit_pop_fp(str, line_no);
 }
 
 void CodeGenerator::code(isvoid_class *expr, int n_temp) {
@@ -245,13 +285,7 @@ void CodeGenerator::before(class__class *node) {
 }
 
 void CodeGenerator::emit_function_entry(int tmp_count, int line_no) {
-    string name;
-    if (current_method) {
-        name = string(current_class->get_name()->get_string()) + string(".") + string(current_method->get_name()->get_string());
-    } else {
-        name = string(current_class->get_name()->get_string()) + string("_init");
-    }
-    emit_move(FP, SP, str, line_no, "set up stack pointer for ", name);
+    emit_move(FP, SP, str, line_no, "set up stack pointer for ", generate_init_or_method_name());
     emit_push(RA, str)          << endl;
     emit_push(SELF, str)        << endl;
     emit_move(SELF, ACC, str)   << endl;
@@ -261,21 +295,24 @@ void CodeGenerator::emit_function_entry(int tmp_count, int line_no) {
 
 }
 
-void CodeGenerator::emit_function_exit(int tmp_count, int parameter_count, int line_no) {
+string CodeGenerator::generate_init_or_method_name() const {
     string name;
     if (current_method) {
         name = string(current_class->get_name()->get_string()) + string(".") + string(current_method->get_name()->get_string());
     } else {
         name = string(current_class->get_name()->get_string()) + string("_init");
     }
+    return std::move(name);
+}
+
+void CodeGenerator::emit_function_exit(int tmp_count, int parameter_count, int line_no) {
+    string name = generate_init_or_method_name();
     emit_load(RA, 0, FP, str, line_no, "exit from ", name, ": load return address");
     emit_load(SELF, -1, FP, str, line_no, "restore previous self");
     int frame_size = 4 * parameter_count +
                      4 * tmp_count +
-                     8 + // return address and old self
-                     4; // old fp
+                     8;// return address and old self
     emit_addiu(SP, SP, frame_size, str, line_no, "pop the frame");
-    emit_load(FP, 0, SP, str, line_no, "restore previous $fp");
     emit_return(str, line_no, "#return from ",  name);
 
 }
@@ -301,7 +338,7 @@ void CodeGenerator::after(class__class *node) {
         if (ar->get_ref()->get_initializer()->is_empty()) {
             return;
         }
-        // $fp points at return address; immediatelly below it is the saved previous self
+        // $fp points at return address; immediately below it is the saved previous self
         // therefore the space for the first available temporary is 2 words below $fp
         Symbol name = ar->get_ref()->get_name();
         ar->get_ref()->get_initializer()->code(this, 2);
@@ -330,7 +367,7 @@ void CodeGenerator::after(method_class *node) {
     int line_no = node->get_line_number();
     str << current_class->get_name() << '.' << node->get_name() << ':' << endl;
     emit_function_entry(tmp_count, line_no);
-    // $fp points at return address; immediatelly below it is the saved previous self
+    // $fp points at return address; immediately below it is the saved previous self
     // therefore the space for the first available temporary is 2 words below $fp
     body->code(this, 2);
     emit_function_exit(tmp_count, scope_index - 1, line_no);
@@ -346,17 +383,18 @@ void CodeGenerator::code(no_expr_class *expr, int n_temp) {
 }
 
 void CaseDataCoder::after(typcase_class *node) {
+    str << case_label(case_count, "tab_end") << LABEL;
     case_count++;
 }
 
 void CaseDataCoder::after(branch_class *node) {
     str << WORD << class_table->get_class_tag(node->get_type_decl()) << endl;
-    str << WORD << "case_" << case_count << '_' << node->get_type_decl() << endl;
+    str << WORD << case_label(case_count, node->get_type_decl()->get_string()) << endl;
 
 }
 
 void CaseDataCoder::before(typcase_class *node) {
-    str << "case_" << case_count << '_' << "tab" << LABEL;
+    str << case_label(case_count, "tab_start") << LABEL;
 }
 
 
