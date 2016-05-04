@@ -22,21 +22,25 @@ class C {
 
 class D inherits C {
     c: String;
-    d(d1:Int, d2:Int):Int {
-        a * d1 + d2
-    };
 	static_str():String {
 	    "D"
 	};
+	d1() : Object {
+
+	};
+
+    d(d1:Int, d2:Int):Int {
+        a * d1 + d2
+    };
 };
 
 class E inherits D {
-    e() : Object {
-        new IO.out_string("e\n")
-    };
 	static_str():String {
 	    "E"
 	};
+    e() : Object {
+        new IO.out_string("e\n")
+    };
 };
 
 class Main inherits IO {
@@ -79,7 +83,7 @@ class Main inherits IO {
     test2() : Int { {
         let tc:Object <- test_case() in
             case tc of
-                e : E => out_string(e@D.static_str()).out_string("\n"); -- todo bug in disp tables
+                e : E => out_string(e@D.static_str()).out_string("\n");
                 d : D => out_string("D\n");
                 c : C => out_string("C\n");
                 o : Object => out_string("Object\n");

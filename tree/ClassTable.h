@@ -120,7 +120,9 @@ class ClassTable : public TreeVisitor {
     int class_tag;
 public:
     virtual ~ClassTable();
-    ClassTable() : class_by_name(), current_class_record(nullptr), class_tag(1) {}
+    ClassTable() : class_by_name(), current_class_record(nullptr),
+                   class_tag(1) // 0 is reserved for Object
+    {}
     Class_ get_class(Symbol s);
     Symbol get_parent(Symbol class_name);
     bool is_subtype(Symbol sub, Symbol super);

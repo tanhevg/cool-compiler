@@ -103,7 +103,10 @@ void ClassTableRecord::index_features(int start_attr_idx, int start_method_idx) 
         item.second->set_index(start_attr_idx++);
     }
     for (auto item : method_index) {
-        item.second->set_index(start_method_idx++);
+        MethodRecord *method_record = item.second;
+        if (method_record->get_index() == -1) {
+            method_record->set_index(start_method_idx++);
+        }
     }
     indexed = true;
 }
@@ -122,7 +125,11 @@ void ClassTableRecord::copy_features(ClassTableRecord *parent_record) {
         attribute_index[attr.first] = attr.second;
     }
     for (auto method_idx : parent_record->method_index) {
-        method_index[method_idx.first] = method_idx.second;
+        if (method_index.find(method_idx.first) == method_index.end()) {
+            method_index[method_idx.first] = method_idx.second;
+        } else {
+            method_index[method_idx.first]->set_index(method_idx.second->get_index());
+        }
     }
 }
 
@@ -136,8 +143,8 @@ void ClassTable::index_attributes_and_methods_rec(Symbol class_name) {
         index_attributes_and_methods_rec(parent_name);
         ClassTableRecord *&parent_record = class_by_name[parent_name];
         int start_index = parent_record->get_attribute_count() + 3;// space for class tag, object size and dispatch pointer
-        class_table_record->index_features(start_index, parent_record->get_method_count());
         class_table_record->copy_features(parent_record);
+        class_table_record->index_features(start_index, parent_record->get_method_count());
     } else {
         class_table_record->index_features(0, 0);
     }
