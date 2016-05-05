@@ -139,9 +139,9 @@ feature_list	: feature ';'
 feature	: OBJECTID '(' formals_list ')' ':' TYPEID '{' expr '}' 
 		{ $$ = method($1, $3, $6, $8); }
 	| OBJECTID '(' formals_list ')' ':' TYPEID '{' '}'
-		{ $$ = method($1, $3, $6, no_expr()); } /* todo return void value? */
+		{ $$ = method($1, $3, $6, no_expr()); } 
 	| OBJECTID '(' ')' ':' TYPEID '{' '}'
-		{ $$ = method($1, nil_Formals(), $5, no_expr()); } /* todo return void value? */
+		{ $$ = method($1, nil_Formals(), $5, no_expr()); } 
 	| OBJECTID '(' ')' ':' TYPEID '{' expr '}'
 		{ $$ = method($1, nil_Formals(), $5, $7); } 
 	| OBJECTID ':' TYPEID opt_assign
