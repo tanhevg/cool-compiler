@@ -81,9 +81,10 @@ class Main inherits IO {
     } };
 
     test2() : Int { {
+        out_string(e.static_str()).out_string("\n")
         let tc:Object <- test_case() in
             case tc of
-                e : E => out_string(e@D.static_str()).out_string("\n");
+                e : E => out_string(e.static_str()).out_string("\n");
                 d : D => out_string("D\n");
                 c : C => out_string("C\n");
                 o : Object => out_string("Object\n");

@@ -7,9 +7,6 @@
 using std::string;
 using std::to_string;
 
-extern char *curr_filename;
-
-
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-parameter"
 #pragma clang diagnostic ignored "-Wwritable-strings"
@@ -26,15 +23,16 @@ static ObjectEnvRecord *heap_entry(Symbol declaring_type,
  * Operators dealing with Int's and Bool's deal with them in object form.
  * Temporary objects are created on heap for result of each expression
  * Expression result in $a0 is the address of the newly created object on the heap
- * todo special handling for void (e.g. return value of a method with empty body, etc)
  */
 void CodeGenerator::binary_int_bool_op(Binary_Expression_class *expr, char *opcode, const char *op_string, int n_temp,
                                        Symbol result_type) {
     expr->get_e1()->code(this, n_temp);
     int line_no = expr->get_line_number();
+    emit_void_dispatch_check(str, line_no, label_count);
     emit_store(ACC, -n_temp, FP, str, line_no,
                "store address of the first operand of ", op_string, " in temporary ", n_temp);
     expr->get_e2()->code(this, n_temp + 1);
+    emit_void_dispatch_check(str, line_no, label_count);
     emit_load(T1, -n_temp, FP, str, line_no,
               "load address of the first operand result of ", op_string, " from temporary ", n_temp);
     // Both operands come in object form, therefore we need to fetch their values into respective registers to proceed
@@ -50,6 +48,7 @@ void CodeGenerator::unary_int_bool_op(Unary_Expression_class *expr, char *opcode
                                       Symbol result_type) {
     int line_no = expr->get_line_number();
     expr->get_e1()->code(this, n_temp);
+    emit_void_dispatch_check(str, line_no, label_count);
     emit_fetch_int(T1, ACC, str, line_no, "fetch value of first operand of ", op_string);
     str << opcode << T5 << " " << T1;
     comment(str, line_no, "# code ", op_string, "; use $t5 because $t1-$t4 are clobbered by Object.copy");
@@ -90,8 +89,9 @@ void CodeGenerator::code(leq_class *expr, int n_temp) {
 }
 
 void CodeGenerator::code(comp_class *expr, int n_temp) {
-    expr->get_e1()->code(this, n_temp);
     int line_no = expr->get_line_number();
+    expr->get_e1()->code(this, n_temp);
+    emit_void_dispatch_check(str, line_no, label_count);
     emit_fetch_int(T5, ACC, str, line_no, " fetch value of first operand of 'not'");
     str << ADDI << T5 << " " << T5 << " -1";
     comment(str, line_no, " code 'not'; use 'not(x) = -(x-1)' form to make sure 0->1 and 1->0 translation");
@@ -99,7 +99,6 @@ void CodeGenerator::code(comp_class *expr, int n_temp) {
     comment(str, line_no, " use $t5 because $t1-$t4 are clobbered by Object.copy");
     emit_new(Bool, str, line_no, " create (new) the result of 'not' on the heap");
     emit_store_int(T5, ACC, str, line_no, " store the 'not' value");
-    //unary_int_bool_op(expr, NOT, "'not'", n_temp, Bool);
 }
 
 void CodeGenerator::code(int_const_class *expr, int n_temp) {
@@ -123,12 +122,6 @@ void CodeGenerator::code(assign_class *expr, int n_temp) {
     object_env.lookup(expr->get_name())->code_store(str, expr->get_line_number(),  "assign to ", expr->get_name());
 }
 
-static void emit_pop_fp(ostream &str, int line_no) {
-    emit_addiu(SP, SP, 4, str, line_no, "pop $fp");
-    emit_load(FP, 0, SP, str, line_no, "pop $fp");
-
-}
-
 void CodeGenerator::dispatch(int line_no, Expression callee, Symbol static_type_or_null, Symbol name, Expressions actuals, int n_temp) {
     Symbol type = static_type_or_null ? static_type_or_null : callee->get_type();
     emit_push(FP, str, line_no, "push old frame pointer before calling ", type, '.', name );
@@ -140,7 +133,7 @@ void CodeGenerator::dispatch(int line_no, Expression callee, Symbol static_type_
         emit_push(ACC, str, line_no, "push actual parameter #", idx, " of ", type, '.', name);
     }
     callee->code(this, n_temp);
-    // todo runtime error if callee evaluates to void
+    emit_void_dispatch_check(str, line_no, label_count);
     if (static_type_or_null) {
         emit_load_address(T1, (string(static_type_or_null->get_string()) + "_dispTab").c_str(), str, line_no,
                           "load address of static dispatch table");
@@ -191,14 +184,14 @@ void CodeGenerator::code(loop_class *expr, int n_temp) {
 }
 
 static const char* case_label(int case_count, const char *label) {
-    string str = string("case_") + to_string(case_count) + '_' + label;
+    string str = string("_case_") + to_string(case_count) + '_' + label;
     return str.data();
 }
 
 void CodeGenerator::code(typcase_class *expr, int n_temp) {
     int line_no = expr->get_line_number();
     expr->get_expr()->code(this, n_temp);
-    emit_beqz(ACC, case_label(case_count, "exception"), str, line_no, "abort if case argument is void");
+    emit_beqz(ACC, case_label(case_count, "void"), str, line_no, "abort if case argument is void");
     emit_store(ACC, -n_temp, FP, str, line_no, "case: store argument in temporary #", n_temp);
     emit_load_address(A1, case_label(case_count, "tab_start"), str, line_no, "case: load start of branch table into $a1");
     emit_load_address(A2, case_label(case_count, "tab_end"), str, line_no, "case: load end of branch table into $a2");
@@ -212,11 +205,8 @@ void CodeGenerator::code(typcase_class *expr, int n_temp) {
         emit_jump(case_label(case_count, "end"), str, _case->get_line_number(), "jump to end of case after branch is evaluated");
         object_env.exitscope();
     });
-    str << case_label(case_count, "exception") << LABEL;
-    emit_load_string(ACC, stringtable.lookup_string(curr_filename), str, line_no,
-                     "no branch found exception: load file name into $a0 before aborting");
-    emit_load_imm(T1, line_no, str, line_no, "no branch found exception: load line number into $t1");
-    emit_jump("_case_abort2", str, line_no, "abort case after branch not found");
+    str << case_label(case_count, "void") << LABEL;
+    emit_abort_file_line(str, line_no, "_case_abort2", "void case argument");
     str << case_label(case_count, "end") << LABEL; // end of case label
     case_count++;
 }
@@ -319,7 +309,7 @@ void CodeGenerator::emit_function_exit(int tmp_count, int parameter_count, int l
                      4 * tmp_count +
                      8;// return address and old self
     emit_addiu(SP, SP, frame_size, str, line_no, "pop the frame");
-    emit_return(str, line_no, "#return from ",  name);
+    emit_return(str, line_no, "return from ",  name);
 
 }
 

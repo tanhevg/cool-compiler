@@ -29,6 +29,12 @@ ostream & emit_push(char *reg, ostream &str);
 ostream & emit_addiu(char *dest, char *src1, int imm, ostream &s);
 ostream & emit_jump(const char *dest, ostream &s);
 
+ostream & emit_bne(const char *src1, const char *src2, const char *ls, int ln, ostream &s);
+
+void emit_pop_fp(ostream &str, int line_no);
+void emit_abort_file_line(ostream &str, int line_no, const char *label, const char *comment);
+void emit_void_dispatch_check(ostream &str, int line_no, int &label_count);
+
 void emit_partial_load_address(char *dest_reg, ostream &s);
 
 template <typename T> ostream & _comment(ostream &os, T arg) {
@@ -126,6 +132,10 @@ template <typename... Ts> ostream & emit_beqz(const char *source, const char *ad
 template <typename... Ts> ostream & emit_branch(const char *ls, int ln, ostream &s, int line_no, Ts... comments) {
     s << BRANCH;
     emit_label_ref(ls, ln, s);
+    return comment(s, line_no, comments...);
+}
+template <typename... Ts> ostream & emit_bne(const char *source, const char *dest, const char *ls, int ln, ostream &s, int line_no, Ts... comments) {
+    emit_bne(source, dest, ls, ln, s);
     return comment(s, line_no, comments...);
 }
 template <typename... Ts> ostream &  emit_label_def(const char *ls, int ln, ostream &s, int line_no, Ts... comments) {

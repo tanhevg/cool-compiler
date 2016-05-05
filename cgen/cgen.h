@@ -75,6 +75,7 @@ private:
     int condition_count;
     int loop_count;
     int case_count;
+    int label_count;
 
     /**
      * used for indexing attributes within a class, and formals of a method
@@ -99,7 +100,7 @@ private:
 public:
     CodeGenerator(ClassTable *_class_table, ostream &_str) :
             class_table(_class_table), object_env(), str(_str),
-            condition_count(0), loop_count(0), case_count(0), scope_index(0),
+            condition_count(0), loop_count(0), case_count(0), scope_index(0), label_count(0),
             current_class(nullptr), current_method(nullptr) { }
 
     void before(class__class *node) override;

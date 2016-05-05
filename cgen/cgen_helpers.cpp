@@ -6,6 +6,8 @@
 #include "cgen_helpers.h"
 
 extern char *gc_collect_names;
+extern char *curr_filename;
+
 
 ostream & emit_object_header(class__class* cls, int tag, ostream& s) {
     return s;
@@ -109,9 +111,10 @@ static void emit_beq(char *src1, char *src2, int label, ostream &s) {
     emit_label_ref(label, s);
 }
 
-static void emit_bne(char *src1, char *src2, int label, ostream &s) {
+ostream & emit_bne(const char *src1, const char *src2, const char *ls, int ln, ostream &s) {
     s << BNE << src1 << " " << src2 << " ";
-    emit_label_ref(label, s);
+    emit_label_ref(ls, ln, s);
+    return s;
 }
 
 static void emit_bleq(char *src1, char *src2, int label, ostream &s) {
@@ -156,5 +159,26 @@ static void emit_gc_check(char *source, ostream &s) {
     if (source != (char *) A1) emit_move(A1, source, s) << endl;
     s << JAL << "_gc_check" << endl;
 }
+
+void emit_pop_fp(ostream &str, int line_no) {
+    emit_addiu(SP, SP, 4, str, line_no, "pop $fp");
+    emit_load(FP, 0, SP, str, line_no, "pop $fp");
+}
+
+void emit_abort_file_line(ostream &str, int line_no, const char *label, const char *comment) {
+    emit_load_string(ACC, stringtable.lookup_string(curr_filename), str, line_no, comment,
+                     ": load file name into $a0 before aborting");
+    emit_load_imm(T1, line_no, str, line_no, comment, ": load line number into $t1");
+    emit_jump(label, str, line_no, comment, "abort");
+
+}
+
+void emit_void_dispatch_check(ostream &str, int line_no, int &label_count) {
+    emit_bne(ACC, ZERO, "_void_check_", label_count, str, line_no, "# check that callee object is not void");
+    emit_abort_file_line(str, line_no, "_dispatch_abort", "dispatch on void callee");
+    emit_label_def("_void_check_", label_count, str);
+    label_count++;
+}
+
 
 
