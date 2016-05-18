@@ -141,9 +141,7 @@ void CodeGenerator::dispatch(int line_no, Expression callee, Symbol static_type_
         emit_load(T1, 2, ACC, str, line_no, "load address of dynamic dispatch table");
     }
     int method_offset = class_table->get_method_offset(type, name);
-    if (method_offset > 0) {
-        emit_load(T1, method_offset, T1, str, line_no, "load address of ", type, '.', name);
-    }
+    emit_load(T1, method_offset, T1, str, line_no, "load address of ", type, '.', name);
     emit_jalr(T1, str, line_no, "call ", type, '.', name);
     // code this here instead of emit_function_exit, because functions in trap handler do not pop $fp
     emit_pop_fp(str, line_no);
