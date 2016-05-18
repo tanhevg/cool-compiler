@@ -149,7 +149,7 @@ template <typename... Ts> ostream & emit_move(char *dest_reg, char *source_reg, 
 }
 
 template <typename... Ts> ostream & emit_seq(char *dest, char *src1, char *src2, ostream &s, int line_no, Ts... comments) {
-    s << SEQ << " " << src1 << " " << src2;
+    s << SEQ << " " << dest << " " << src1 << " " << src2;
     return comment(s, line_no, comments...);
 }
 
