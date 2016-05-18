@@ -994,8 +994,8 @@ _strcat_argempty:
 #		Offset starts at 0.
 #
 #	INPUT:	$a0 the string
-#		length int object on top of stack (-4)
-#		index int object below length on stack (-8)
+#		index int object on top of stack (-4)
+#		length int object below length on stack (-8)
 #	OUTPUT:	The substring object in $a0
 #
 
@@ -1029,8 +1029,8 @@ _ss_ok:
 	move	$a2 $a0		# use a2 to make copy
 	addiu	$gp $gp -4	# backup alloc ptr
 	lw	$a1 12($sp)	# load orig
-	lw	$t1 20($sp)	# index obj
-	lw	$t2 16($sp)	# length obj
+	lw	$t1 16($sp)	# index obj
+	lw	$t2 20($sp)	# length obj
 	lw	$t0 str_size($a1)
 	lw	$v1 int_slot($t1) # index
 	lw	$v0 int_slot($t0) # size of orig
