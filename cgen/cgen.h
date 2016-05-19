@@ -78,7 +78,7 @@ private:
     int label_count;
 
     /**
-     * used for indexing attributes within a class, and formals of a method
+     * used for indexing formals of a method
      * method arguments are referenced via $fp + index; $fp points to return address;
      * so the first method argument is $fp + 1; so the method arguments index is 1-based:
      * we start with 1, and the number of arguments is last_index - 1

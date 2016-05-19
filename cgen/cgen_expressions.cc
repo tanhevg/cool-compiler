@@ -157,6 +157,7 @@ void CodeGenerator::code(dispatch_class *expr, int n_temp) {
 
 void CodeGenerator::code(cond_class *expr, int n_temp) {
     int line_no = expr->get_line_number();
+    int condition_count = this->condition_count++;
     expr->get_predicate()->code(this, n_temp);
     emit_fetch_int(ACC, ACC, str, line_no, "conditional predicate: fetch boolean value from boolean object");
     emit_beqz(ACC,"false",condition_count, str, line_no, "branch to false lable if predicate is zero");
@@ -165,11 +166,11 @@ void CodeGenerator::code(cond_class *expr, int n_temp) {
     emit_label_def("false", condition_count, str, line_no, "false branch");
     expr->get_else()->code(this, n_temp);
     emit_label_def("condition_end", condition_count, str, line_no, "condition end");
-    condition_count++;
 }
 
 void CodeGenerator::code(loop_class *expr, int n_temp) {
     int line_no = expr->get_line_number();
+    int loop_count = this->loop_count++;
     emit_label_def("loop_start", loop_count, str, line_no, "loop start");
     expr->get_predicate()->code(this, n_temp);
     emit_fetch_int(ACC, ACC, str, line_no, "loop predicate: fetch boolean value from boolean object");
@@ -178,7 +179,6 @@ void CodeGenerator::code(loop_class *expr, int n_temp) {
     emit_branch("loop_start", loop_count, str, line_no, "branch to loop start");
     emit_label_def("loop_end", loop_count, str, line_no, "end of loop");
     emit_move(ACC, ZERO, str, line_no, "loop returns void");
-    loop_count++;
 }
 
 static const char* case_label(int case_count, const char *label) {
@@ -189,13 +189,14 @@ static const char* case_label(int case_count, const char *label) {
 void CodeGenerator::code(typcase_class *expr, int n_temp) {
     int line_no = expr->get_line_number();
     expr->get_expr()->code(this, n_temp);
+    int case_count = this->case_count++;
     emit_beqz(ACC, case_label(case_count, "void"), str, line_no, "abort if case argument is void");
     emit_store(ACC, -n_temp, FP, str, line_no, "case: store argument in temporary #", n_temp);
     emit_load_address(A1, case_label(case_count, "tab_start"), str, line_no, "case: load start of branch table into $a1");
     emit_load_address(A2, case_label(case_count, "tab_end"), str, line_no, "case: load end of branch table into $a2");
     emit_addiu(A2, A2, -8, str, line_no, "case: subtract 2 words from branch table end, such that BEQ test can be used");
     emit_jump("_case_subroutine", str, line_no, "jump to case subroutine");
-    expr->get_cases()->traverse([this, n_temp](Case _case){
+    expr->get_cases()->traverse([this, n_temp, case_count](Case _case){
         object_env.enterscope();
         object_env.addid(_case->get_name(), stack_entry(_case->get_type_decl(), -n_temp));
         str << case_label(case_count, _case->get_type_decl()->get_string()) << LABEL; // branch label
@@ -206,7 +207,6 @@ void CodeGenerator::code(typcase_class *expr, int n_temp) {
     str << case_label(case_count, "void") << LABEL;
     emit_abort_file_line(str, line_no, "_case_abort2", "void case argument");
     str << case_label(case_count, "end") << LABEL; // end of case label
-    case_count++;
 }
 
 void CodeGenerator::code(block_class *block, int n_temp) {
@@ -269,10 +269,9 @@ void CodeGenerator::before(program_class *node) {
 
 void CodeGenerator::before(class__class *node) {
     object_env.enterscope();
-    scope_index = DEFAULT_OBJFIELDS + 1;
     class_table->visit_ordered_attrs_of_class(node->get_name(),
         [this](IndexedRecord<attr_class> *ar) {
-            object_env.addid(ar->get_ref()->get_name(), heap_entry(ar->get_ref()->get_type(), scope_index++));
+            object_env.addid(ar->get_ref()->get_name(), heap_entry(ar->get_ref()->get_type(), ar->get_index()));
         }
     );
     current_class = node;
