@@ -30,6 +30,7 @@ ostream & emit_addiu(char *dest, char *src1, int imm, ostream &s);
 ostream & emit_jump(const char *dest, ostream &s);
 
 ostream & emit_bne(const char *src1, const char *src2, const char *ls, int ln, ostream &s);
+ostream & emit_beq(const char *src1, const char *src2, const char *ls, int ln, ostream &s);
 
 void emit_pop_fp(ostream &str, int line_no);
 void emit_abort_file_line(ostream &str, int line_no, const char *label, const char *comment);
@@ -118,6 +119,11 @@ template <typename... Ts> ostream & emit_jalr(char *address, ostream &s, int lin
     return comment(s, line_no, comments...);
 }
 
+template <typename... Ts> ostream & emit_jal(char *address, ostream &s, int line_no, Ts... comments) {
+    s << JAL << address;
+    return comment(s, line_no, comments...);
+}
+
 template <typename... Ts> ostream & emit_beqz(const char *source, const char *ls, int ln, ostream &s, int line_no, Ts... comments) {
     s << BEQZ << source << " ";
     emit_label_ref(ls, ln, s);
@@ -136,6 +142,10 @@ template <typename... Ts> ostream & emit_branch(const char *ls, int ln, ostream 
 }
 template <typename... Ts> ostream & emit_bne(const char *source, const char *dest, const char *ls, int ln, ostream &s, int line_no, Ts... comments) {
     emit_bne(source, dest, ls, ln, s);
+    return comment(s, line_no, comments...);
+}
+template <typename... Ts> ostream & emit_beq(const char *source, const char *dest, const char *ls, int ln, ostream &s, int line_no, Ts... comments) {
+    emit_beq(source, dest, ls, ln, s);
     return comment(s, line_no, comments...);
 }
 template <typename... Ts> ostream &  emit_label_def(const char *ls, int ln, ostream &s, int line_no, Ts... comments) {

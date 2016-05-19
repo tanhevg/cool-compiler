@@ -81,7 +81,31 @@ void CodeGenerator::code(lt_class *expr, int n_temp) {
 }
 
 void CodeGenerator::code(eq_class *expr, int n_temp) {
-    binary_int_bool_op(expr, SEQ, "'='", n_temp, Bool);
+    expr->get_e1()->code(this, n_temp);
+    int line_no = expr->get_line_number();
+    emit_void_dispatch_check(str, line_no, label_count);
+    emit_store(ACC, -n_temp, FP, str, line_no,
+               "store address of the first operand of '=' in temporary ", n_temp);
+    expr->get_e2()->code(this, n_temp + 1);
+    emit_void_dispatch_check(str, line_no, label_count);
+    emit_load(T1, -n_temp, FP, str, line_no,
+              "load address of the first operand result of '=' from temporary ", n_temp);
+    emit_move(T2, ACC, str, line_no, "move the second operand of '='");
+
+    emit_partial_load_address(ACC, str);
+    truebool.code_ref(str);
+    str << " # " << line_no << " : value in $a0 will be returned for true\n";
+
+    emit_beq(T1, T2, "_pointers_equal", label_count, str, line_no, "skip equality test if pointers are identical");
+
+    emit_partial_load_address(A1, str);
+    falsebool.code_ref(str);
+    str << " # " << line_no << " : value in $a1 will be returned for false\n";
+
+    emit_jal("equality_test", str, line_no, "");
+    emit_label_def("_pointers_equal", label_count, str);
+    label_count++;
+
 }
 
 void CodeGenerator::code(leq_class *expr, int n_temp) {

@@ -20,5 +20,6 @@ extern Symbol prim_slot;
 extern IntEntryP zero_int;
 extern StringEntryP empty_string;
 extern BoolConst falsebool;
+extern BoolConst truebool;
 
 #endif //COOL_COMPILER_EXTERN_SYMBOLS_H

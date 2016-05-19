@@ -106,9 +106,10 @@ ostream & emit_label_def(const char *ls, int ln, ostream &s) {
 }
 
 
-static void emit_beq(char *src1, char *src2, int label, ostream &s) {
+ostream& emit_beq(const char *src1, const char *src2, const char *ls, int ln, ostream &s) {
     s << BEQ << src1 << " " << src2 << " ";
-    emit_label_ref(label, s);
+    emit_label_ref(ls, ln, s);
+    return s;
 }
 
 ostream & emit_bne(const char *src1, const char *src2, const char *ls, int ln, ostream &s) {
@@ -169,7 +170,7 @@ void emit_abort_file_line(ostream &str, int line_no, const char *label, const ch
     emit_load_string(ACC, stringtable.lookup_string(curr_filename), str, line_no, comment,
                      ": load file name into $a0 before aborting");
     emit_load_imm(T1, line_no, str, line_no, comment, ": load line number into $t1");
-    emit_jump(label, str, line_no, comment, "abort");
+    emit_jump(label, str, line_no, comment, " abort");
 
 }
 
