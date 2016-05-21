@@ -27,7 +27,7 @@ ostream & emit_object_header(class__class* cls, int tag, ostream& s) {
 //
 //////////////////////////////////////////////////////////////////////////////
 
-ostream & emit_load(char *dest_reg, int offset, char *source_reg, ostream &s) {
+ostream & emit_load(const char *dest_reg, int offset, char *source_reg, ostream &s) {
     s << LW << dest_reg << " " << offset * WORD_SIZE << "(" << source_reg << ")";
     return s;
 }
@@ -161,9 +161,9 @@ static void emit_gc_check(char *source, ostream &s) {
     s << JAL << "_gc_check" << endl;
 }
 
-void emit_pop_fp(ostream &str, int line_no) {
+void emit_pop(const char *reg, ostream &str, int line_no) {
     emit_addiu(SP, SP, 4, str, line_no, "pop $fp");
-    emit_load(FP, 0, SP, str, line_no, "pop $fp");
+    emit_load(reg, 0, SP, str, line_no, "pop $fp");
 }
 
 void emit_abort_file_line(ostream &str, int line_no, const char *label, const char *comment) {

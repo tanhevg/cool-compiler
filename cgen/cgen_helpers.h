@@ -19,7 +19,7 @@ void emit_method_ref(Symbol classname, Symbol methodname, ostream &s);
 void emit_init_ref(Symbol sym, ostream &s);
 ostream & emit_store(char *source_reg, int offset, char *dest_reg, ostream &s);
 
-ostream & emit_load(char *dest_reg, int offset, char *source_reg, ostream &s);
+ostream & emit_load(const char *dest_reg, int offset, char *source_reg, ostream &s);
 ostream & emit_load_address(char *dest_reg, const char *address, ostream &s);
 ostream & emit_load_imm(char *dest_reg, int val, ostream &s);
 
@@ -32,7 +32,7 @@ ostream & emit_jump(const char *dest, ostream &s);
 ostream & emit_bne(const char *src1, const char *src2, const char *ls, int ln, ostream &s);
 ostream & emit_beq(const char *src1, const char *src2, const char *ls, int ln, ostream &s);
 
-void emit_pop_fp(ostream &str, int line_no);
+void emit_pop(const char *reg, ostream &str, int line_no);
 void emit_abort_file_line(ostream &str, int line_no, const char *label, const char *comment);
 void emit_void_dispatch_check(ostream &str, int line_no, int &label_count);
 
@@ -59,7 +59,7 @@ template <typename... Ts> ostream & emit_store(char *source_reg, int offset, cha
     return comment(s, line_no, comments...);
 }
 
-template <typename... Ts> ostream & emit_load(char *dest_reg, int offset, char *source_reg, ostream &s, int line_no, Ts... comments) {
+template <typename... Ts> ostream & emit_load(const char *dest_reg, int offset, char *source_reg, ostream &s, int line_no, Ts... comments) {
     emit_load(dest_reg, offset, source_reg, s);
     return comment(s, line_no, comments...);
 }

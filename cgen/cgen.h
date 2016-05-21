@@ -93,8 +93,6 @@ private:
 
     void dispatch(int line_no, Expression callee, Symbol static_type_or_null, Symbol name, Expressions actuals, int n_temp);
 
-    void code_new(Symbol type_name, int line_no);
-
     std::string generate_init_or_method_name() const;
 
 public:

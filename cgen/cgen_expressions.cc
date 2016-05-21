@@ -168,7 +168,7 @@ void CodeGenerator::dispatch(int line_no, Expression callee, Symbol static_type_
     emit_load(T1, method_offset, T1, str, line_no, "load address of ", type, '.', name);
     emit_jalr(T1, str, line_no, "call ", type, '.', name);
     // code this here instead of emit_function_exit, because functions in trap handler do not pop $fp
-    emit_pop_fp(str, line_no);
+    emit_pop(FP, str, line_no);
 }
 
 void CodeGenerator::code(static_dispatch_class *expr, int n_temp) {
@@ -267,15 +267,16 @@ void CodeGenerator::code(let_class *expr, int n_temp) {
 }
 
 void CodeGenerator::code(new__class *expr, int n_temp) {
-    code_new(expr->get_type_name(), expr->get_line_number());
-}
-
-void CodeGenerator::code_new(Symbol type_name, int line_no) {
+    Symbol type_name = expr->get_type_name();
+    int line_no = expr->get_line_number();
     emit_new(type_name, str, line_no, "new ", type_name, "()");
     emit_push(FP, str, line_no, "store old frame pointer before calling ", type_name, "_init");
+    emit_push(ACC, str, line_no, "store result of new before calling ", type_name, "_init");
+    emit_move(SELF, ACC, str, line_no, "prepare self pointer for use in initializer of ", type_name);
     str << "\tjal\t" << type_name << "_init";
     comment(str, line_no, "jump to initializer of ", type_name);
-    emit_pop_fp(str, line_no);
+    emit_pop(ACC, str, line_no);
+    emit_pop(FP, str, line_no);
 }
 
 void CodeGenerator::code(isvoid_class *expr, int n_temp) {
@@ -350,6 +351,7 @@ void CodeGenerator::after(class__class *node) {
     int tmp_count = 0;
     bool is_empty = true;
     int line_no = node->get_line_number();
+    // todo call parent's initialiser
     class_table->visit_ordered_attrs_of_class(current_class->get_name(), [&tmp_count, &is_empty](AttrRecord *ar) {
         if (ar->get_ref()->get_temporaries_count() > tmp_count) {
             tmp_count = ar->get_ref()->get_temporaries_count();
