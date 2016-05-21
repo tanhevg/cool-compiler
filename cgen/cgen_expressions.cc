@@ -243,14 +243,25 @@ void CodeGenerator::code(block_class *block, int n_temp) {
 void CodeGenerator::code(let_class *expr, int n_temp) {
     int line_no = expr->get_line_number();
     if (expr->get_init()->is_empty()) {
-        code_new(expr->get_type_decl(), line_no);
+        emit_partial_load_address(ACC, str);
+        if (expr->get_type_decl() == Bool) {
+            falsebool.code_ref(str);
+        } else if (expr->get_type_decl() == Str) {
+            empty_string->code_ref(str);
+        } else if (expr->get_type_decl() == Int) {
+            zero_int->code_ref(str);
+        } else {
+            str << ZERO;
+        }
+        comment(str, line_no, "empty initializer for ", expr->get_identifier());
     } else {
         expr->get_init()->code(this, n_temp);
     }
     object_env.enterscope();
     ObjectEnvRecord *temp_record = stack_entry(expr->get_type_decl(), -n_temp);
     object_env.addid(expr->get_identifier(), temp_record);
-    temp_record->code_store(str, line_no, "store the address returned by the initaliser in temp #",  n_temp);
+    temp_record->code_store(str, line_no, "store the address returned by the initalizer for ",
+                            expr->get_identifier(), " in temp #",  n_temp);
     expr->get_body()->code(this, n_temp+1);
     object_env.exitscope();
 }
