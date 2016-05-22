@@ -162,8 +162,8 @@ static void emit_gc_check(char *source, ostream &s) {
 }
 
 void emit_pop(const char *reg, ostream &str, int line_no) {
-    emit_addiu(SP, SP, 4, str, line_no, "pop $fp");
-    emit_load(reg, 0, SP, str, line_no, "pop $fp");
+    emit_addiu(SP, SP, 4, str, line_no, "pop ", reg);
+    emit_load(reg, 0, SP, str, line_no, "pop ", reg);
 }
 
 void emit_abort_file_line(ostream &str, int line_no, const char *label, const char *comment) {

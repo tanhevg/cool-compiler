@@ -9,4 +9,4 @@ output/Debug/cool-compiler -o output/print-cool test/print-cool.cl
 output/Debug/cool-compiler -o output/new-complex test/new-complex.cl
 output/Debug/cool-compiler -o output/hs test/hs.cl
 output/Debug/cool-compiler -o output/cells test/cells.cl
-output/Debug/cool-compiler -o output/airth test/arith.cl 
+output/Debug/cool-compiler -o output/arith test/arith.cl 

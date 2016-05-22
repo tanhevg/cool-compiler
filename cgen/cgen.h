@@ -65,6 +65,7 @@ private:
     ObjectEnv object_env; //todo need to delete the naked pointers
     ClassTable *class_table;
     ostream &str;
+    vector<attr_class*> current_attributes;
 
     void binary_int_bool_op(Binary_Expression_class *expr, char *opcode, const char *op_string, int n_temp,
                             Symbol result_type);
@@ -99,7 +100,7 @@ public:
     CodeGenerator(ClassTable *_class_table, ostream &_str) :
             class_table(_class_table), object_env(), str(_str),
             condition_count(0), loop_count(0), case_count(0), scope_index(0), label_count(0),
-            current_class(nullptr), current_method(nullptr) { }
+            current_class(nullptr), current_method(nullptr), current_attributes() { }
 
     void before(class__class *node) override;
 
@@ -108,6 +109,8 @@ public:
     void before(method_class *node) override;
 
     void after(method_class *node) override;
+
+    void after(attr_class *node) override;
 
     void after(formal_class *node) override;
 

@@ -57,27 +57,27 @@ void CodeGenerator::unary_int_bool_op(Unary_Expression_class *expr, char *opcode
 }
 
 void CodeGenerator::code(plus_class *expr, int n_temp) {
-    binary_int_bool_op(expr, ADD, "'+'", n_temp, Int);
+    binary_int_bool_op(expr, ADD, "'plus'", n_temp, Int);
 }
 
 void CodeGenerator::code(sub_class *expr, int n_temp) {
-    binary_int_bool_op(expr, SUB, "'-'", n_temp, Int);
+    binary_int_bool_op(expr, SUB, "'minus'", n_temp, Int);
 }
 
 void CodeGenerator::code(mul_class *expr, int n_temp) {
-    binary_int_bool_op(expr, MUL, "'*'", n_temp, Int);
+    binary_int_bool_op(expr, MUL, "'star'", n_temp, Int);
 }
 
 void CodeGenerator::code(divide_class *expr, int n_temp) {
-    binary_int_bool_op(expr, DIV, "'/'", n_temp, Int);
+    binary_int_bool_op(expr, DIV, "'divide'", n_temp, Int);
 }
 
 void CodeGenerator::code(neg_class *expr, int n_temp) {
-    unary_int_bool_op(expr, NEG, "'~'", n_temp, Int);
+    unary_int_bool_op(expr, NEG, "'unary minus'", n_temp, Int);
 }
 
 void CodeGenerator::code(lt_class *expr, int n_temp) {
-    binary_int_bool_op(expr, SLT, "'<'", n_temp, Bool);
+    binary_int_bool_op(expr, SLT, "'less'", n_temp, Bool);
 }
 
 void CodeGenerator::code(eq_class *expr, int n_temp) {
@@ -243,15 +243,17 @@ void CodeGenerator::code(block_class *block, int n_temp) {
 void CodeGenerator::code(let_class *expr, int n_temp) {
     int line_no = expr->get_line_number();
     if (expr->get_init()->is_empty()) {
-        emit_partial_load_address(ACC, str);
         if (expr->get_type_decl() == Bool) {
+            emit_partial_load_address(ACC, str);
             falsebool.code_ref(str);
         } else if (expr->get_type_decl() == Str) {
+            emit_partial_load_address(ACC, str);
             empty_string->code_ref(str);
         } else if (expr->get_type_decl() == Int) {
+            emit_partial_load_address(ACC, str);
             zero_int->code_ref(str);
         } else {
-            str << ZERO;
+            str << MOVE << ACC << " " << ZERO;
         }
         comment(str, line_no, "empty initializer for ", expr->get_identifier());
     } else {
@@ -271,11 +273,8 @@ void CodeGenerator::code(new__class *expr, int n_temp) {
     int line_no = expr->get_line_number();
     emit_new(type_name, str, line_no, "new ", type_name, "()");
     emit_push(FP, str, line_no, "store old frame pointer before calling ", type_name, "_init");
-    emit_push(ACC, str, line_no, "store result of new before calling ", type_name, "_init");
-    emit_move(SELF, ACC, str, line_no, "prepare self pointer for use in initializer of ", type_name);
     str << "\tjal\t" << type_name << "_init";
     comment(str, line_no, "jump to initializer of ", type_name);
-    emit_pop(ACC, str, line_no);
     emit_pop(FP, str, line_no);
 }
 
@@ -304,6 +303,7 @@ void CodeGenerator::before(program_class *node) {
 }
 
 void CodeGenerator::before(class__class *node) {
+    current_attributes.clear();
     object_env.enterscope();
     class_table->visit_ordered_attrs_of_class(node->get_name(),
         [this](IndexedRecord<attr_class> *ar) {
@@ -351,29 +351,32 @@ void CodeGenerator::after(class__class *node) {
     int tmp_count = 0;
     bool is_empty = true;
     int line_no = node->get_line_number();
-    // todo call parent's initialiser
-    class_table->visit_ordered_attrs_of_class(current_class->get_name(), [&tmp_count, &is_empty](AttrRecord *ar) {
-        if (ar->get_ref()->get_temporaries_count() > tmp_count) {
-            tmp_count = ar->get_ref()->get_temporaries_count();
+    for (attr_class *attr : current_attributes) {
+        if (attr->get_temporaries_count() > tmp_count) {
+            tmp_count = attr->get_temporaries_count();
         }
-        is_empty &= ar->get_ref()->get_initializer()->is_empty();
-    });
-    str << current_class->get_name() << "_init:" << endl;
-    if (is_empty) {
-        emit_return(str, line_no, "all attribute initializers for ", node->get_name(), " are empty; return straight away");
-        return;
+        is_empty &= attr->get_initializer()->is_empty();
     }
+    Symbol class_name = node->get_name();
+    str << class_name << "_init:" << endl;
     emit_function_entry(tmp_count, line_no);
-    class_table->visit_ordered_attrs_of_class(current_class->get_name(), [this, line_no](IndexedRecord<attr_class> *ar) {
-        if (ar->get_ref()->get_initializer()->is_empty()) {
-            return;
+    if (node->get_parent() != No_class) {
+        emit_push(FP, str, line_no, "store old frame pointer before calling parent initializer ", node->get_parent(), "_init");
+        str << JAL << node->get_parent() << "_init" << "\t# call parent initializer\n";
+        emit_pop(FP, str, line_no);
+    }
+    if (!is_empty) {
+        for (attr_class *attr : current_attributes) {
+            Expression initializer = attr->get_initializer();
+            if (!initializer->is_empty()) {
+                // $fp points at return address; immediately below it is the saved previous self
+                // therefore the space for the first available temporary is 2 words below $fp
+                Symbol name = attr->get_name();
+                initializer->code(this, 2);
+                object_env.lookup(name)->code_store(str, line_no, "assign initial value to ", name);
+            }
         }
-        // $fp points at return address; immediately below it is the saved previous self
-        // therefore the space for the first available temporary is 2 words below $fp
-        Symbol name = ar->get_ref()->get_name();
-        ar->get_ref()->get_initializer()->code(this, 2);
-        object_env.lookup(name)->code_store(str, line_no, "assign initial value to ", name);
-    });
+    }
     emit_move(ACC, SELF, str, line_no, "restore self in $a0");
     emit_function_exit(tmp_count, 0, line_no);
     object_env.exitscope();
@@ -402,6 +405,10 @@ void CodeGenerator::after(method_class *node) {
     body->code(this, 2);
     emit_function_exit(tmp_count, scope_index - 1, line_no);
     object_env.exitscope();
+}
+
+void CodeGenerator::after(attr_class *node) {
+    current_attributes.push_back(node);
 }
 
 void CodeGenerator::after(formal_class *node) {
