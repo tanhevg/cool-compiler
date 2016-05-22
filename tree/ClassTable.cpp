@@ -145,6 +145,11 @@ void ClassTable::index_attributes_and_methods_rec(Symbol class_name) {
         index_attributes_and_methods_rec(parent_name);
         ClassTableRecord *&parent_record = class_by_name[parent_name];
         int start_index = parent_record->get_attribute_count() + 3;// space for class tag, object size and dispatch pointer
+
+        /**
+         * copy_features has to go before index_features, to make sure that indices of inherited and overridden methods
+         * are preserved
+         */
         class_table_record->copy_features(parent_record);
         class_table_record->index_features(start_index, parent_record->get_method_count());
     } else {
