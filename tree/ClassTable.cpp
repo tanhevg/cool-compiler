@@ -100,7 +100,9 @@ int ClassTable::get_prototype_size(Symbol class_name) {
 
 void ClassTableRecord::index_features(int start_attr_idx, int start_method_idx) {
     for (auto item : attribute_index) {
-        item.second->set_index(start_attr_idx++);
+        if (item.second->get_index() == -1) {
+            item.second->set_index(start_attr_idx++);
+        }
     }
     for (auto item : method_index) {
         MethodRecord *method_record = item.second;
