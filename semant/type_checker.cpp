@@ -246,7 +246,7 @@ void TypeChecker::before(let_class *node) {
         return;
 
     }
-    if (type_decl == SELF_TYPE) {  //todo this is wrong?
+    if (type_decl == SELF_TYPE) {
         type_decl = type_env.current_class->get_name();
     }
     type_env.object_env.addid(node->get_identifier(), type_decl);
@@ -254,7 +254,7 @@ void TypeChecker::before(let_class *node) {
 void TypeChecker::after(let_class *node) {
     type_env.object_env.exitscope();
     Symbol type_decl = node->get_type_decl();
-    if (type_decl == SELF_TYPE) {//todo this is wrong?
+    if (type_decl == SELF_TYPE) {
         type_decl = type_env.current_class->get_name();
     }
     Symbol init_type = node->get_init()->get_type();

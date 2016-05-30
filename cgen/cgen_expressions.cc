@@ -133,8 +133,9 @@ void CodeGenerator::code(int_const_class *expr, int n_temp) {
 
 void CodeGenerator::code(string_const_class *expr, int n_temp) {
     string tok = string(expr->get_token()->get_string());
+    tok = erase_newline(tok);
     emit_load_string(ACC, stringtable.lookup_string(expr->get_token()->get_string()), str,
-                     expr->get_line_number(), "load string const ", "'" + trim(tok) + "'");
+                     expr->get_line_number(), "load string const ", "'", tok,"'");
 }
 
 void CodeGenerator::code(bool_const_class *expr, int n_temp) {
@@ -289,7 +290,7 @@ void CodeGenerator::code(isvoid_class *expr, int n_temp) {
 
 void CodeGenerator::code(object_class *expr, int n_temp) {
     int line_no = expr->get_line_number();
-    if (self == expr->get_name()) { //todo ugly if
+    if (self == expr->get_name()) {
         emit_move(ACC, SELF, str, line_no, "object 'self'");
     } else {
         object_env.lookup(expr->get_name())->code_load(str, line_no, "object ", expr->get_name());

@@ -24,10 +24,8 @@
 #include "cgen.h"
 #include "cgen_gc.h"
 #include "extern_symbols.h"
-#include "cgen_helpers.h"
 #include "PrototypeCoder.h"
 #include "TemporariesCounter.h"
-#include "emit.h"
 
 extern void emit_string_constant(ostream &str, char *s);
 

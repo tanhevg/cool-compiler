@@ -37,8 +37,6 @@ public:
     }
 };
 
-//todo don't sort; rely on natural ordering
-
 typedef IndexedRecord<attr_class> AttrRecord;
 
 class MethodRecord: public IndexedRecord<method_class> {

@@ -3,6 +3,7 @@
 FILE=$1
 
 output/Debug/cool-compiler -o "output/$FILE" "test/$FILE.cl"
+spim -exception_file asm/trap/trap.handler.asm -file "output/$FILE.asm"
 
 # output/Debug/cool-compiler -o output/primes test/primes.cl
 # output/Debug/cool-compiler -o output/list test/list.cl
