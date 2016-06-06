@@ -128,14 +128,13 @@ void CodeGenerator::code(comp_class *expr, int n_temp) {
 void CodeGenerator::code(int_const_class *expr, int n_temp) {
     string tok = string(expr->get_token()->get_string());
     emit_load_int(ACC, inttable.lookup_string(expr->get_token()->get_string()), str,
-                  expr->get_line_number(), "load int const ", rtrim(tok));
+                  expr->get_line_number(), "load int const ", erase_newline(tok));
 }
 
 void CodeGenerator::code(string_const_class *expr, int n_temp) {
     string tok = string(expr->get_token()->get_string());
-    tok = erase_newline(tok);
     emit_load_string(ACC, stringtable.lookup_string(expr->get_token()->get_string()), str,
-                     expr->get_line_number(), "load string const ", "'", tok,"'");
+                     expr->get_line_number(), "load string const ", "'", erase_newline(tok), "'");
 }
 
 void CodeGenerator::code(bool_const_class *expr, int n_temp) {
