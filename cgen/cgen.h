@@ -7,9 +7,6 @@
 #include "cgen_helpers.h"
 
 
-enum Basicness {
-    Basic, NotBasic
-};
 #define TRUE 1
 #define FALSE 0
 
@@ -18,11 +15,18 @@ private:
     Symbol declaring_type;
     char *reg;
     int offset;
+    bool code_gc_assign;
 public:
     ObjectEnvRecord(Symbol _declaring_type, char *_reg, int _offset) :
             declaring_type(_declaring_type),
             reg(_reg),
-            offset(_offset) { }
+            offset(_offset),
+            code_gc_assign(false){ }
+    ObjectEnvRecord(Symbol _declaring_type, char *_reg, int _offset, bool _code_gc_assign) :
+            declaring_type(_declaring_type),
+            reg(_reg),
+            offset(_offset),
+            code_gc_assign(_code_gc_assign){ }
 
     Symbol get_declaring_type() { return declaring_type; }
 
@@ -32,7 +36,12 @@ public:
 
     template<typename... Ts>
     ostream &code_store(ostream &str, int line_no, Ts... logs) {
-        return emit_store(ACC, offset, reg, str, line_no, logs...);
+        emit_store(ACC, offset, reg, str, line_no, logs...);
+        if (code_gc_assign) {
+            emit_addiu(A1, reg, offset * WORD_SIZE, str, line_no, "Argument for _GenGC_Assign");
+            emit_jal("_GenGC_Assign", str, line_no, "Notify GC of attribute assignment");
+        }
+        return str;
     }
 
     template<typename... Ts>

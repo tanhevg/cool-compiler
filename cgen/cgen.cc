@@ -264,7 +264,8 @@ void code_select_gc(ostream &str) {
     //
     // Generate GC choice constants (pointers to GC functions)
     //
-    str << GLOBAL << "_MemMgr_INITIALIZER" << endl;    str << "_MemMgr_INITIALIZER:" << endl;
+    str << GLOBAL << "_MemMgr_INITIALIZER" << endl;
+    str << "_MemMgr_INITIALIZER:" << endl;
     str << WORD << gc_init_names[cgen_Memmgr] << endl;
     str << GLOBAL << "_MemMgr_COLLECTOR" << endl;
     str << "_MemMgr_COLLECTOR:" << endl;
@@ -272,6 +273,9 @@ void code_select_gc(ostream &str) {
     str << GLOBAL << "_MemMgr_TEST" << endl;
     str << "_MemMgr_TEST:" << endl;
     str << WORD << (cgen_Memmgr_Test == GC_TEST) << endl;
+    str << GLOBAL << "_MemMgr_DEBUG" << endl;
+    str << "_MemMgr_DEBUG:" << endl;
+    str << WORD << (cgen_Memmgr_Debug == GC_DEBUG) << endl;
 }
 
 

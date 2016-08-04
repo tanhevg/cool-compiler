@@ -1,6 +1,6 @@
 #include <cool-tree.h>
 #include <extern_symbols.h>
-#include <string>
+#include <cgen_gc.h>
 #include "cgen.h"
 #include "string_util.h"
 
@@ -10,13 +10,14 @@ using std::to_string;
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-parameter"
 #pragma clang diagnostic ignored "-Wwritable-strings"
+
 static ObjectEnvRecord *stack_entry(Symbol declaring_type, int offset) {
     return new ObjectEnvRecord(declaring_type, FP, offset);
 }
 
 static ObjectEnvRecord *heap_entry(Symbol declaring_type,
                                    int offset) {
-    return new ObjectEnvRecord(declaring_type, SELF, offset);
+    return new ObjectEnvRecord(declaring_type, SELF, offset, cgen_Memmgr != GC_NOGC);
 }
 
 /**
@@ -320,6 +321,9 @@ void CodeGenerator::emit_function_entry(int tmp_count, int line_no) {
     emit_move(SELF, ACC, str)   << endl;
     if (tmp_count > 0) {
         emit_addiu(SP, SP, -4 * tmp_count, str, line_no, "push ", tmp_count, " temporaries");
+        for(int i = tmp_count; i > 0; i--) {
+            emit_store(ZERO, i, SP, str, line_no, "clear the space reserved for temporaries");
+        }
     }
 
 }

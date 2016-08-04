@@ -1,16 +1,25 @@
- - Operators dealing with Int's and Bool's deal with them in object form; temporary objects are created on heap for result of each expression
- - Initialisation with constants should load the appropriate label to $a0, and then store $a0 in the right place in memory (heap or stack)
- 
- - self should be passed in $a0 for coolaid. we store it in $s0; need to also store self in AR and put it back in $s0 on method return (callee responsibility)
- - use a scoped symbol table to figure out whether a symbol is a local variable (that includes method parameters) or an object attribute - object environment
- - the value in the symbol table is a record that has a register name ($t9 for attributes, $fp for variables and parameters) and an offset
- - each let expression creates a new temporary that is visible in the body; so the variable's offset from $fp can be either positive (parameters) or negative (let bindings)
+ - Operators dealing with Int's and Bool's deal with them in object form;
+    temporary objects are created on heap for result of each expression
+ - Initialisation with constants should load the appropriate label to $a0,
+    and then store $a0 in the right place in memory (heap or stack)
+ - self should be passed in $a0 for coolaid. we store it in $s0;
+    need to also store self in the frame and put it back in $s0 on method return (callee responsibility)
+ - use a scoped symbol table - object environment - to figure out whether a symbol is a local variable
+    (that includes method parameters) or an object attribute - object environment
  - object environment usage:
  -- add all class attributes to the top scope before visiting class; pop after
- -- add method parameter to the next scope before visitin method; pop after
+ -- add method parameter to the next scope before visiting method; pop after
  -- each let binding adds its variable to the new scope
+ - the value in the object environment is a record that has a register name -
+    $s0 for attributes, $fp for variables and parameters - and an offset
+ - each let expression creates a new temporary that is visible in the body;
+    so the variable's offset from $fp can be either positive (parameters) or negative (let bindings)
+ - when the space is allocated for temporaries on method entry, we need to fill it with zeros;
+    otherwise we might get some old rubbish there, which will upset GC
+ - popping the frame off the stack is callee responsibility (i.e the method itself):
+    it knows about the argument count and temporary count
 
- - Activation record layout:
+ - Frame layout:
 
      |----------------|
      | old $fp        |
@@ -22,4 +31,12 @@
      | temp 1         |
      | ....           |
      | temp N         |
-     |----------------| <---- $sp points here after AR is fully formed
+     |----------------| <---- $sp points here after the frame is fully formed
+
+ - cases
+ -- there is a case subroutine, defined in emit.h
+ -- it traverses the "branch table" (passed as an argument), and looks for the tag
+    of case expression (also passed as an argument)
+ -- the branch table is generated for each case expression
+ -- each entry is 2 words: tag of the result, followed by address of the branch expression (label)
+

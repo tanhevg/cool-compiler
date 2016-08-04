@@ -77,16 +77,6 @@ void handle_flags(int argc, char *argv[]) {
             case 'r':
                 disable_reg_alloc = 1;
                 break;
-//#else
-//    case 'l':
-//    case 'p':
-//    case 's':
-//    case 'c':
-//    case 'v':
-//    case 'r':
-//      cerr << "No debugging available\n";
-//      break;
-//#endif
             case 'g':  // enable garbage collection
                 cgen_Memmgr = GC_GENGC;
                 break;

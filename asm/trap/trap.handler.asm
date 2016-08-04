@@ -307,7 +307,7 @@ _sabort_msg3:	.asciiz	"Length to substr too long\n"
 _sabort_msg4:	.asciiz	"Length to substr is negative\n"
 _sabort_msg:	.asciiz "Execution aborted.\n"
 _objcopy_msg:	.asciiz "Object.copy: Invalid object size.\n"
-_gc_abort_msg:	.asciiz "GC bug!\n"
+_gc_abort_msg:	.asciiz "GC bug at address "
 
 # Exception Handler Message:
 _uncaught_msg1: .asciiz "Uncaught Exception of Class "
@@ -1276,8 +1276,8 @@ _MemMgr_Test_end:
 #
 #   The assignment table is implemented as a stack growing towards the
 #   allocation pointer ($gp) in the work area.  If they cross, a minor
-#   collection is then carried out.  This allows the garbage collector to
-#   to have to keep a fixed table of assignments.  As a result, programs
+#   collection is then carried out.  This allows the garbage collector
+#   to keep a fixed table of assignments.  As a result, programs
 #   with many assignments will tend not to be bogged down with extra
 #   garbage collections.
 #
@@ -1302,11 +1302,11 @@ _MemMgr_Test_end:
 #        first L4 is checked to see if any of the unused memory between L3
 #        and L4 is enough to satisfy this requirement.  If not, then the
 #        heap will be expanded.  If it is, the appropriate amount will be
-#        transfered from the unused area to the work/reserve area.
+#        transferred from the unused area to the work/reserve area.
 #
 #     2) During a major collection, if the live objects in the old area
 #        do not fit within the new area, the heap is expanded and $s7
-#        is updated to reflact this.  This value later gets stored back
+#        is updated to reflect this.  This value later gets stored back
 #        into L4.
 #
 #   During a normal allocation and minor collections, the heap has the
@@ -1612,10 +1612,17 @@ _gc_check:
 _gc_ok:
 	jr	$ra
 
-_gc_abort:		 
+_gc_abort:
+    move $t0 $a0
 	la      $a0 _gc_abort_msg
 	li	$v0 4
 	syscall                  # print gc message
+	move $a0 $t0
+	li  $v0 1
+	syscall                 # print the offending address
+	la $a0 _nl
+	li	$v0 4
+	syscall                 # print newline
 	li   	$v0 10
         syscall			 # exit
 
@@ -1661,10 +1668,13 @@ _GenGC_Collect:
 	sw	$ra 12($sp)			# save return address
 	sw	$a0 8($sp)			# save stack end
 	sw	$a1 4($sp)			# save size
+	lw  $t0 _MemMgr_DEBUG
+	beqz $t0 _GenGC_COLLECT_skip
 	la	$a0 _GenGC_COLLECT		# print collection message
 	li	$v0 4
 	syscall
 	lw	$a0 8($sp)			# restore stack end
+_GenGC_COLLECT_skip:
 	jal	_GenGC_MinorC			# minor collection
 	la	$a1 heap_start
 	lw	$t1 GenGC_HDRMINOR1($a1)
@@ -1711,9 +1721,12 @@ _GenGC_Collect_nomajor:
 	lw	$s7 GenGC_HDRL3($a1)		# load limit into $s7
 	b	_GenGC_Collect_done
 _GenGC_Collect_major:
+	lw  $t0 _MemMgr_DEBUG
+	beqz $t0 _CgenGC_Major_skip
 	la	$a0 _GenGC_Major		# print collection message
 	li	$v0 4
 	syscall
+_CgenGC_Major_skip:
 	lw	$a0 8($sp)			# restore stack end
 	jal	_GenGC_MajorC			# major collection
 	la	$a1 heap_start
